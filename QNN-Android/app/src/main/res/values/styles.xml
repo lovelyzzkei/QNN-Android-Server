@@ -1,0 +1,37 @@
+<!--
+ * Copyright (c) 2016-2018 Qualcomm Technologies, Inc.
+ * All Rights Reserved.
+ * Confidential and Proprietary - Qualcomm Technologies, Inc.
+-->
+<resources>
+    <style name="AppTheme" parent="android:Theme.Material.Light.DarkActionBar">
+        <item name="android:colorPrimary">@color/colorPrimary</item>
+        <item name="android:colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="android:colorAccent">@color/colorAccent</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+    </style>
+
+    <style name="Button.White" parent="ThemeOverlay.AppCompat">
+        <item name="colorAccent">@color/pastelBlue</item>
+    </style>
+
+    <!-- Base application theme -->
+<!--    <style name="AppTheme" parent="Theme.MyApp">-->
+<!--        &lt;!&ndash; Customize your theme here &ndash;&gt;-->
+<!--&lt;!&ndash;        <item name="android:windowBackground">?attr/colorBackground</item>&ndash;&gt;-->
+<!--        <item name="android:textColorPrimary">@color/</item>-->
+<!--    </style>-->
+
+<!--    <style name="itemKey">-->
+<!--        <item name="android:textColor">@color/colorPrimaryText</item>-->
+<!--        <item name="android:textSize">18sp</item>-->
+<!--    </style>-->
+
+<!--    <style name="itemValue">-->
+<!--        <item name="android:textColor">@color/colorSecondaryText</item>-->
+<!--        <item name="android:textSize">14sp</item>-->
+<!--    </style>-->
+
+</resources>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="delegates">
+        <item>Select delegates</item>
+        <item>CPU</item>
+        <item>GPU</item>
+        <item>QNN</item>
+    </string-array>
+
+</resources>

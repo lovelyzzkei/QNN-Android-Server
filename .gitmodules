@@ -1,0 +1,3 @@
+[submodule "Server/ai-hub-models"]
+	path = Server/ai-hub-models
+	url = https://github.com/quic/ai-hub-models

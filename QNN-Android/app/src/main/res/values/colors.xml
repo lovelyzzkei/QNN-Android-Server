@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+ * Copyright (c) 2016-2018 Qualcomm Technologies, Inc.
+ * All Rights Reserved.
+ * Confidential and Proprietary - Qualcomm Technologies, Inc.
+-->
+<resources>
+<!--    <color name="colorPrimary">#03A9F4</color>-->
+<!--    <color name="colorPrimaryDark">#0288D1</color>-->
+<!--    <color name="colorAccent">#FF9800</color>-->
+<!--    <color name="colorPrimaryLight">#B3E5FC</color>-->
+<!--    <color name="colorPrimaryText">#212121</color>-->
+<!--    <color name="colorSecondaryText">#757575</color>-->
+<!--    <color name="colorDivider">#BDBDBD</color>-->
+<!--    <color name="colorTextIcons">#FFFFFF</color>-->
+    <!-- Base application colors -->
+    <color name="colorPrimary">#6200EE</color>
+    <color name="colorPrimaryDark">#3700B3</color>
+    <color name="colorAccent">#03DAC5</color>
+
+    <color name="primaryColor">#6200EE</color>
+    <color name="secondaryColor">#03DAC5</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+
+    <!-- Custom colors -->
+    <color name="primaryTextColor">#333333</color>
+
+    <color name="pastelBlue">#BCE4E7</color> <!-- 메인 파스텔 블루 -->
+    <color name="pastelBlueLight">#D4EEF3</color> <!-- 밝은 파스텔 블루 -->
+    <color name="pastelBlueDark">#6FA9B6</color> <!-- 어두운 파스텔 블루 -->
+    <color name="pastelAccent">#F1C5C5</color> <!-- 파스텔 포인트 색상 (핑크) -->
+    <color name="black_translucent">#80000000</color>
+</resources>
