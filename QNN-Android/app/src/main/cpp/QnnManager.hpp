@@ -3,8 +3,8 @@
 //
 // Loading QNN Model by QNN API, not using TFLite
 
-#ifndef ARIA_QNNMANAGER_HPP
-#define ARIA_QNNMANAGER_HPP
+#ifndef QNNSKELETON_QNNMANAGER_HPP
+#define QNNSKELETON_QNNMANAGER_HPP
 
 #include "QnnInterface.h"
 #include "QnnWrapperUtils.hpp"
@@ -125,4 +125,4 @@ private:
 
 };
 
-#endif //ARIA_QNNMANAGER_HPP
+#endif //QNNSKELETON_QNNMANAGER_HPP

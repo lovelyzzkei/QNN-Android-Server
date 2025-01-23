@@ -2,8 +2,8 @@
 // Created by user on 2025-01-09.
 //
 
-#ifndef ARIA_ODMANAGER_HPP
-#define ARIA_ODMANAGER_HPP
+#ifndef QNNSKELETON_ODMANAGER_HPP
+#define QNNSKELETON_ODMANAGER_HPP
 
 #include <vector>
 #include "opencv2/opencv.hpp"
@@ -77,4 +77,4 @@ private:
     TFLiteManager* tfLiteManager = nullptr;
 };
 
-#endif //ARIA_ODMANAGER_HPP
+#endif //QNNSKELETON_ODMANAGER_HPP

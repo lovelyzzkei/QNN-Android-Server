@@ -15,13 +15,13 @@ echo -e "${GREEN}[*] Download OpenCV library...${NC}"
 # unzip download
 # rm download
 # mv OpenCV-android-sdk/sdk OpenCV
-mv OpenCV QNN-Android/
+# mv OpenCV QNN-Android/
 # rm -r OpenCV-android-sdk
 
 echo -e "${GREEN}[✔] OpenCV download and folder setup completed! Check the 'QNN-Android' folder.${NC}"
 
 
-mkdir -p QNN-Android/app/src/main/jniLibs/arm64-v8a
+# mkdir -p QNN-Android/app/src/main/jniLibs/arm64-v8a
 # mkdir -p app/src/main/assets
 
 
@@ -31,8 +31,7 @@ if [ -z "$QNN_SDK_ROOT" ]; then
 else
   echo -e "${GREEN}QNN_SDK_ROOT Root = ${QNN_SDK_ROOT}${NC}"
 fi
-# Check if QNN_SDK_ROOT is set ?
-# [ -z "$QNN_SDK_ROOT" ] && echo "QNN_SDK_ROOT not set" && exit -1 || echo "QNN_SDK_ROOT Root = ${QNN_SDK_ROOT}"
+
 
 # cp -R $QNN_SDK_ROOT/examples/QNN/SampleApp/src/Log   app/src/main/cpp/
 # cp -R $QNN_SDK_ROOT/examples/QNN/SampleApp/src/Utils app/src/main/cpp/

@@ -48,7 +48,6 @@ wrapper/
 notifications/
 
 # assets
-assets/
 raw/
 data/
 #jniLibs/

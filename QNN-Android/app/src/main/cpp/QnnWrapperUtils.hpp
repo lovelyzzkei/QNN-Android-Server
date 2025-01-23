@@ -1,10 +1,3 @@
-//
-// Created by user on 2025-01-10.
-//
-
-#ifndef ARIA_QNNWRAPPERUTILS_HPP
-#define ARIA_QNNWRAPPERUTILS_HPP
-
 
 //==============================================================================
 //
@@ -13,6 +6,13 @@
 //  Confidential and Proprietary - Qualcomm Technologies, Inc.
 //
 //==============================================================================
+
+//
+// Created by user on 2025-01-10.
+//
+
+#ifndef QNNSKELETON_QNNWRAPPERUTILS_HPP
+#define QNNSKELETON_QNNWRAPPERUTILS_HPP
 
 #pragma once
 
@@ -174,4 +174,4 @@ namespace qnn_wrapper_api {
 }  // namespace qnn_wrapper_api
 
 
-#endif //ARIA_QNNWRAPPERUTILS_HPP
+#endif //QNNSKELETON_QNNWRAPPERUTILS_HPP

@@ -2,8 +2,8 @@
 // Created by user on 2024-12-23.
 //
 
-#ifndef ARIA_TFLITEMANAGER_HPP
-#define ARIA_TFLITEMANAGER_HPP
+#ifndef QNNSKELETON_TFLITEMANAGER_HPP
+#define QNNSKELETON_TFLITEMANAGER_HPP
 
 #include <memory>
 #include <string>
@@ -61,4 +61,4 @@ private:
 };
 
 
-#endif //ARIA_TFLITEMANAGER_HPP
+#endif //QNNSKELETON_TFLITEMANAGER_HPP

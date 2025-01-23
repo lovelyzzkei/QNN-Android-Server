@@ -1,6 +1,4 @@
-//
-// Created by user on 2025-01-10.
-// Mainly reference from UbiquitousLearning/mllm
+// Mainly reference from UbiquitousLearning/mllm and SampleApp from QNN
 
 #include <string>
 #include <vector>
@@ -29,8 +27,6 @@ using namespace qnn::tools::sample_app;
 
 
 QnnManager::QnnManager(const char* model, const char* backend) {
-    // TODO : Get both from user
-//    std::string modelPath = "libQnn_yolov6_fp16.so";
     std::string modelPath = std::string(model);
     std::string backEndPath;
 
@@ -39,9 +35,6 @@ QnnManager::QnnManager(const char* model, const char* backend) {
     } else if (strcmp(backend, "CPU") == 0) {
         backEndPath = "libQnnCpu.so";
     }
-//    std::string backEndPath = "libQnnHtpV69Stub.so";
-
-//    std::string opPackagePaths = "libQnnCpuOpPackageExample.so:QnnOpPackage_interfaceProvider;";
 
     QNN_INFO("Model: %s", modelPath.c_str());
     QNN_INFO("Backend: %s", backEndPath.c_str());

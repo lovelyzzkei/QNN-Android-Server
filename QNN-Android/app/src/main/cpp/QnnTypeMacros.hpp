@@ -10,8 +10,8 @@
 // Created by user on 2025-01-10.
 //
 
-#ifndef ARIA_QNNTYPEMACROS_HPP
-#define ARIA_QNNTYPEMACROS_HPP
+#ifndef QNNSKELETON_QNNTYPEMACROS_HPP
+#define QNNSKELETON_QNNTYPEMACROS_HPP
 
 #pragma once
 
@@ -676,4 +676,4 @@ inline bool isQnnTensorV1Compatible(const Qnn_OpConfig_t* const opConfig) {
 
 
 
-#endif //ARIA_QNNTYPEMACROS_HPP
+#endif //QNNSKELETON_QNNTYPEMACROS_HPP
