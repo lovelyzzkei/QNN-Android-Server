@@ -8,6 +8,7 @@
 RED='\033[1;31m'
 GREEN='\033[1;32m'  
 NC='\033[0m'        
+ANDROID_PATH="QNN-Android"        
 
 echo -e "${GREEN}[*] Download OpenCV library...${NC}"
 
@@ -33,16 +34,29 @@ else
 fi
 
 
-# cp -R $QNN_SDK_ROOT/examples/QNN/SampleApp/src/Log   app/src/main/cpp/
-# cp -R $QNN_SDK_ROOT/examples/QNN/SampleApp/src/Utils app/src/main/cpp/
-# cp -R $QNN_SDK_ROOT/examples/QNN/SampleApp/src/PAL   app/src/main/cpp/
-# cp -R $QNN_SDK_ROOT/include/QNN                      app/src/main/cpp/
-# cp $QNN_SDK_ROOT/examples/QNN/SampleApp/src/QnnTypeMacros.hpp  app/src/main/cpp/include/
-# cp $QNN_SDK_ROOT/examples/QNN/SampleApp/src/WrapperUtils/QnnWrapperUtils.hpp  app/src/main/cpp/include/
-# mv app/src/main/cpp/QNN/*.h app/src/main/cpp/include/
-# cp $QNN_SDK_ROOT/examples/QNN/SampleApp/src/WrapperUtils/QnnWrapperUtils.cpp  app/src/main/cpp/src/
+# Copying libraries
+echo -n "[*] Copying hexagon-v73 libraries to ${ANDROID_PATH}/app/src/main/jniLibs/arm64-v8a/... "
+if cp "$QNN_SDK_ROOT/lib/hexagon-v73/unsigned/"*.so "${ANDROID_PATH}/app/src/main/jniLibs/arm64-v8a/"; then
+  echo -e "${GREEN}Complete${NC}"
+else
+  echo -e "${RED}Failed${NC}"
+  exit 1
+fi
 
-# ##writing jniLibs
-# cp $QNN_SDK_ROOT/lib/hexagon-v73/unsigned/*.so app/src/main/jniLibs/arm64-v8a/
-# cp $QNN_SDK_ROOT/lib/hexagon-v75/unsigned/*.so app/src/main/jniLibs/arm64-v8a/
-# cp $QNN_SDK_ROOT/lib/aarch64-android/*.so app/src/main/jniLibs/arm64-v8a/
+echo -n "[*] Copying hexagon-v75 libraries to ${ANDROID_PATH}/app/src/main/jniLibs/arm64-v8a/... "
+if cp "$QNN_SDK_ROOT/lib/hexagon-v75/unsigned/"*.so "${ANDROID_PATH}/app/src/main/jniLibs/arm64-v8a/"; then
+  echo -e "${GREEN}Complete${NC}"
+else
+  echo -e "${RED}Failed${NC}"
+  exit 1
+fi
+
+echo -n "[*] Copying aarch64-android libraries to ${ANDROID_PATH}/app/src/main/jniLibs/arm64-v8a/... "
+if cp "$QNN_SDK_ROOT/lib/aarch64-android/"*.so "${ANDROID_PATH}/app/src/main/jniLibs/arm64-v8a/"; then
+  echo -e "${GREEN}Complete${NC}"
+else
+  echo -e "${RED}Failed${NC}"
+  exit 1
+fi
+
+echo -e "${GREEN}[*] All dependencies are resolved!${NC}"
