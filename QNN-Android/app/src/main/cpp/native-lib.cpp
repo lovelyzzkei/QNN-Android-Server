@@ -110,7 +110,6 @@ Java_com_lovelyzzkei_qnnSkeleton_ARActivity_getObjectBoxesJNI(JNIEnv *env, jobje
 
     std::vector<Detection> detectionResults = gODManager->doODInference(mrgb);
 
-    // Java에서 Detection 객체 배열 생성
     jclass detectionClass = env->FindClass("com/lovelyzzkei/qnnSkeleton/ARActivity$YoloDetection");
     jobjectArray detectionArray = env->NewObjectArray(detectionResults.size(), detectionClass, nullptr);
     jmethodID constructor = env->GetMethodID(detectionClass, "<init>", "(FFFFFLjava/lang/String;)V");

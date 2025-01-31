@@ -12,18 +12,18 @@ ANDROID_PATH="QNN-Android"
 
 echo -e "${GREEN}[*] Download OpenCV library...${NC}"
 
-# wget https://sourceforge.net/projects/opencvlibrary/files/4.5.5/opencv-4.5.5-android-sdk.zip/download
-# unzip download
-# rm download
-# mv OpenCV-android-sdk/sdk OpenCV
-# mv OpenCV QNN-Android/
-# rm -r OpenCV-android-sdk
+wget https://sourceforge.net/projects/opencvlibrary/files/4.5.5/opencv-4.5.5-android-sdk.zip/download
+unzip download
+rm download
+mv OpenCV-android-sdk/sdk OpenCV
+mv OpenCV QNN-Android/
+rm -r OpenCV-android-sdk
 
 echo -e "${GREEN}[✔] OpenCV download and folder setup completed! Check the 'QNN-Android' folder.${NC}"
 
 
-# mkdir -p QNN-Android/app/src/main/jniLibs/arm64-v8a
-# mkdir -p app/src/main/assets
+mkdir -p QNN-Android/app/src/main/jniLibs/arm64-v8a
+mkdir -p app/src/main/assets
 
 
 if [ -z "$QNN_SDK_ROOT" ]; then

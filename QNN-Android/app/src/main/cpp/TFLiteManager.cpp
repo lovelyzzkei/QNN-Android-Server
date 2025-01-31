@@ -86,7 +86,7 @@ std::pair<std::unique_ptr<tflite::Interpreter>, TfLiteDelegate*>
     TfLiteDelegate* selectedDelegate = nullptr;
 
     char modelPath[300];
-    std::sprintf(modelPath, "/data/local/tmp/qnnSkeleton/models/%s", modelName);
+    std::sprintf(modelPath, "/data/local/tmp/qnnSkeleton/demo/%s", modelName);
 
     LOGI("===================== CREATING INTERPRETER =====================\n");
     LOGI("[MODEL NAME  ] : %s \n", modelPath);
