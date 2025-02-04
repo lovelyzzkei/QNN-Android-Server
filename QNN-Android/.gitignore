@@ -1,6 +1,5 @@
 # Gradle files
 .gradle/
-!gradle/
 build/
 
 # Local configuration file (sdk path, etc)
@@ -45,8 +44,9 @@ app/libs/
 
 # caches, wrapper file
 caches/
-wrapper/
 notifications/
+wrapper/
+!gradle/
 
 # assets
 raw/
@@ -61,3 +61,4 @@ app/src/main/jniLibs
 # app/src/main/cpp/QNN
 # app/src/main/cpp/Utils
 
+sdk/*

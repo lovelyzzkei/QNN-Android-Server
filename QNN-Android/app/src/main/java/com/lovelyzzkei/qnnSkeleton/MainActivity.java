@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Framework Spinner
         Spinner spinnerFramework = findViewById(R.id.spinner_framework);
-        String[] frameworks = {"TFLite", "QNN"};
+        String[] frameworks = {"QNN"};
         setupSpinner(spinnerFramework, frameworks);
 
         // Backend Spinner
@@ -49,36 +49,6 @@ public class MainActivity extends AppCompatActivity {
         String[] precisions = {"FP32", "FP16"};
         setupSpinner(spinnerPrecision, precisions);
 
-
-//        Button ARtistryButton = findViewById(R.id.ARtistry);
-//        ARtistryButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                // Start Activity A
-//                Intent intent = new Intent(MainActivity.this, ARActivity.class);
-//                startActivity(intent);
-//            }
-//        });
-
-//        Button preliminaryButton = findViewById(R.id.preliminary);
-//        preliminaryButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                // Start Activity A
-//                Intent intent = new Intent(MainActivity.this, PrelimActivity.class);
-//                startActivity(intent);
-//            }
-//        });
-
-//        Button autoPreliminaryButton = findViewById(R.id.autoPreliminary);
-//        autoPreliminaryButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                // Start Activity A
-//                Intent intent = new Intent(MainActivity.this, AutoPrelimActivity.class);
-//                startActivity(intent);
-//            }
-//        });
 
         Button ariaButton = findViewById(R.id.aria);
         ariaButton.setOnClickListener(new View.OnClickListener() {
@@ -94,8 +64,10 @@ public class MainActivity extends AppCompatActivity {
                                 "\nBackend: " + selectedBackend + " Precision: " + selectedPrecision,
                         Toast.LENGTH_LONG).show();
 
-                // Start Activity A
+                // Start Activity
                 Intent intent = new Intent(MainActivity.this, ARActivity.class);
+//                Intent intent = new Intent(MainActivity.this, CameraActivity.class);
+
                 intent.putExtra("SELECTED_MODEL", selectedModel);
                 intent.putExtra("SELECTED_FRAMEWORK", selectedFramework);
                 intent.putExtra("SELECTED_BACKEND", selectedBackend);

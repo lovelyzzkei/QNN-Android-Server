@@ -92,6 +92,11 @@ private:
     StatusCode extractBackendProfilingInfo (Qnn_ProfileHandle_t profileHandle);
     StatusCode extractProfilingEvent(QnnProfile_EventId_t profileEventId);
     StatusCode extractProfilingSubEvents(QnnProfile_EventId_t profileEventId);
+
+    StatusCode createPowerConfigId();
+    StatusCode setPowerConfig();
+    StatusCode setRpcLatencyAndPolling();
+
     void reportError(const std::string &err);
 
     bool m_isBackendInitialized;
@@ -111,8 +116,14 @@ private:
 
     qnn_wrapper_api::GraphInfo_t **m_graphsInfo = nullptr;
 
+
     uint32_t m_graphsCount;
     uint32_t m_graphConfigsInfoCount;
+
+    // Power performance
+    uint32_t m_powerConfigId;
+    uint32_t m_deviceId = 0;
+    uint32_t m_coreId = 0;
 
     bool m_debug = true;
 

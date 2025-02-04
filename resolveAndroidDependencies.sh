@@ -15,8 +15,7 @@ echo -e "${GREEN}[*] Download OpenCV library...${NC}"
 wget https://sourceforge.net/projects/opencvlibrary/files/4.5.5/opencv-4.5.5-android-sdk.zip/download
 unzip download
 rm download
-mv OpenCV-android-sdk/sdk OpenCV
-mv OpenCV QNN-Android/
+mv OpenCV-android-sdk/sdk QNN-Android/
 rm -r OpenCV-android-sdk
 
 echo -e "${GREEN}[✔] OpenCV download and folder setup completed! Check the 'QNN-Android' folder.${NC}"

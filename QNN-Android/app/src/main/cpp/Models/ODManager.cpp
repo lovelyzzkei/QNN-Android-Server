@@ -9,7 +9,6 @@
 #include <iostream>
 #include "ODManager.hpp"
 #include "../QnnTypeMacros.hpp"
-#include "../TFLiteManager.hpp"
 #include "../QnnManager.hpp"
 
 
@@ -23,24 +22,15 @@ ODManager::ODManager(const char* device,
                      const char* precision, const char* framework) {
     loadClassNames();
 
-    // TODO: Fix, Load TFLite model. If not, QNN model takes x2 latency.
-    tfLiteManager = new TFLiteManager();
-    prepareODModel(device);
+    std::string model = std::string(model_) + "_" + std::string(precision) + ".so";
+    qnnManager = new QnnManager(model.c_str(), backend_);
 
-    if (strcmp(framework, "TFLite") == 0) {
-        tfLiteManager = new TFLiteManager();
-        prepareODModel(device);
-    }
-    else if (strcmp(framework, "QNN") == 0) {
-        std::string model = std::string(model_) + "_" + std::string(precision) + ".so";
-        qnnManager = new QnnManager(model.c_str(), backend_);
-
-        auto dim = getQnnTensorDimensions((*qnnManager->getGraphsInfo())[0].inputTensors);
-        width = dim[2];
-        height = dim[1];
-        LOGD("width: %d, height: %d, numClasses: %d", width, height, numObjects);
-    }
+    auto dim = getQnnTensorDimensions((*qnnManager->getGraphsInfo())[0].inputTensors);
+    width = dim[2];
+    height = dim[1];
+    LOGD("width: %d, height: %d, numClasses: %d", width, height, numObjects);
     this->framework = framework;
+
 }
 
 ODManager::~ODManager() {
@@ -56,24 +46,10 @@ auto logExecutionTime = [](const std::string &stage, auto &&func) {
 };
 
 
-void ODManager::prepareODModel(const char* device) {
-    std::unique_ptr<tflite::Interpreter> interp;
-
-    std::string npuModelName = "yolov6_480x640.tflite";
-    mODModel = tfLiteManager->buildTFLiteNetwork(npuModelName.c_str(), "QNN").first;
-
-    width = mODModel->input_tensor(0)->dims->data[2];
-    height = mODModel->input_tensor(0)->dims->data[1];
-    numObjects = mODModel->output_tensor(2)->dims->data[1];
-
-    LOGD("width: %d, height: %d, numClasses: %d", width, height, numObjects);
-    LOGD("Object detection model is prepared");
-}
 
 
 void ODManager::preprocessImage(cv::Mat &mrgb) {
     cv::resize(mrgb, mrgb, cv::Size(width, height), cv::INTER_CUBIC);
-    cv::cvtColor(mrgb, mrgb, CV_BGR2RGB);
     cv::cvtColor(mrgb, mrgb, CV_BGR2RGB);
     mrgb.convertTo(mrgb, CV_32FC3, 1.0/255.0);
 
@@ -95,37 +71,14 @@ std::vector<Detection> ODManager::doODInference(cv::Mat &mrgb) {
         preprocessImage(mrgb);
     });
 
-//    auto start = std::chrono::high_resolution_clock::now();
-//    preprocessImage(mrgb);
-//    auto end = std::chrono::high_resolution_clock::now();
-//    auto duration = std::chrono::duration<double, std::milli>(end - start);
-//    LOGD("Preprocesss time: %.3f ms", duration.count());
+    // QNN version of executing model
+    logExecutionTime("Inference", [&]() {
+        qnnManager->inferenceModel(reinterpret_cast<float32_t *>(mrgb.data));
+    });
 
-    if (strcmp(framework, "TFLite") == 0) {
-        // TFLite version of executing model
-        logExecutionTime("Inference", [&]() {
-            const TfLiteTensor *inputTensor = mODModel->input_tensor(0);
-            memcpy(&inputTensor->data.raw[0], reinterpret_cast<const char *>(mrgb.data),
-                   mrgb.total() * mrgb.elemSize());
-            mrgb.release();
-            mODModel->Invoke();
-        });
-
-        logExecutionTime("Postprocess", [&]() {
-            dets = postprocessResults();
-        });
-
-    }
-    else if (strcmp(framework, "QNN") == 0) {
-        // QNN version of executing model
-        logExecutionTime("Inference", [&]() {
-            qnnManager->inferenceModel(reinterpret_cast<float32_t *>(mrgb.data));
-        });
-
-        logExecutionTime("Postprocess", [&]() {
-            dets = postprocessResultsQNN(qnnManager->m_inferData);
-        });
-    }
+    logExecutionTime("Postprocess", [&]() {
+        dets = postprocessResultsQNN(qnnManager->m_inferData);
+    });
 
     return dets;
 }
@@ -171,45 +124,6 @@ std::vector<Detection> ODManager::postprocessResultsQNN(
 
 
 
-
-
-std::vector<Detection> ODManager::postprocessResults() {
-    const TfLiteTensor *boxesTensor = mODModel->output_tensor(0);
-    const TfLiteTensor *scoresTensor = mODModel->output_tensor(1);
-    const TfLiteTensor *classIdxTensor = mODModel->output_tensor(2);
-
-    // Output 0: Box (1, N_CLS, 4)
-    std::vector<std::vector<float>> boxes;
-    {
-        std::vector<float> flatBoxes = tensorToVector<float>(boxesTensor);
-
-        // (1, 6300, 4) -> std::vector<std::vector<float>> boxes
-        int numBoxes = boxesTensor->dims->data[1];
-        int boxElements = boxesTensor->dims->data[2]; // 4 (x1, y1, x2, y2)
-        for (int i = 0; i < numBoxes; ++i) {
-            std::vector<float> box(flatBoxes.begin() + i * boxElements,
-                                   flatBoxes.begin() + (i + 1) * boxElements);
-            boxes.push_back(box);
-        }
-
-//        for (int i = 0; i < 10; i++) {
-//            LOGD("output[%d]: %f", i, flatBoxes[i]);
-//        }
-    }
-
-    // Output 1: Score (1, N_CLS)
-    std::vector<float> scores = tensorToVector<float>(scoresTensor);
-
-    // Output 2: Class Idx (1, N_CLS)
-    std::vector<float> classIdx = tensorToVector<float>(classIdxTensor);
-
-    // NMS
-    float scoreThreshold = 0.5;
-    float iouThreshold = 0.4;
-    auto finalDetections = filterHighConfBoxes(boxes, scores, classIdx, scoreThreshold, iouThreshold);
-
-    return finalDetections;
-}
 
 
 // YOLO Post-processing
@@ -298,20 +212,3 @@ void ODManager::loadClassNames() {
     LOGD("Number of classes: %d", idx);
 }
 
-
-// Convert TfLiteTensor data to std::vector
-template <typename T>
-std::vector<T> ODManager::tensorToVector(const TfLiteTensor* tensor) {
-    if (!tensor) {
-        throw std::invalid_argument("Tensor is null");
-    }
-
-    const T* tensorData = reinterpret_cast<const T*>(tensor->data.raw);
-    size_t tensorSize = 1;
-
-    for (int i = 0; i < tensor->dims->size; ++i) {
-        tensorSize *= tensor->dims->data[i];
-    }
-
-    return std::vector<T>(tensorData, tensorData + tensorSize);
-}

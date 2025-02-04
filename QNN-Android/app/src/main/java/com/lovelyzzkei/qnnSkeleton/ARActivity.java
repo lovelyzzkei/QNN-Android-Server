@@ -440,7 +440,6 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
         }
         Camera camera = frame.getCamera();
 
-        // Frame을 ARIAManager로 넘겨줘야함
         Image cameraImage = null;
         if (camera.getTrackingState() == TrackingState.TRACKING && isARIAInitialized) {
             try {
@@ -467,7 +466,7 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
         // used to draw the background camera image.
         backgroundRenderer.updateDisplayGeometry(frame);
 
-        // Depth image를 렌더링하는 부분
+
         if (camera.getTrackingState() == TrackingState.TRACKING) {
             if (depthSettings.arCoreDepthColorVisualizationEnabled()) {
                 try (Image depthImage = frame.acquireDepthImage()) {
@@ -690,7 +689,6 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
 
     public void addAnchor(Anchor anchor) {
         if (wrappedAnchors.size() >= 20) {
-            // 오래된 Anchor 제거
             wrappedAnchors.get(0).getAnchor().detach();
             wrappedAnchors.remove(0);
         }

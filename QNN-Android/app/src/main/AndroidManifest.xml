@@ -47,6 +47,7 @@
             android:screenOrientation="landscape"
             android:configChanges="orientation|screenSize"></activity>
 
+
         <uses-library android:name="libOpenCL.so"
                 android:required="false"/>
         <uses-library android:name="libcdsprpc.so"

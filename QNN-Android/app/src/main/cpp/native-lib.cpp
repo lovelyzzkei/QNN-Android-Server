@@ -5,15 +5,12 @@
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 
-#include "TFLiteManager.hpp"
 #include "Models/ODManager.hpp"
 #include "QnnManager.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
 
-#include <tensorflow/lite/model.h>
-#include <tensorflow/lite/interpreter.h>
 
 using namespace cv;
 
@@ -106,10 +103,13 @@ Java_com_lovelyzzkei_qnnSkeleton_ARActivity_getObjectBoxesJNI(JNIEnv *env, jobje
     // Convert to OpenCV Mat, YUV -> RGB (Originally YUV_420_888)
     cv::Mat myuv(height + height / 2, width, CV_8UC1, (unsigned char*)pYUVFrameData);
     cv::Mat mrgb(height, width, CV_8UC3);
+    LOGD("mrgb size: %d x %d", mrgb.cols, mrgb.rows);
     cv::cvtColor(myuv, mrgb, cv::COLOR_YUV2RGB_NV21, 3);
+
 
     std::vector<Detection> detectionResults = gODManager->doODInference(mrgb);
 
+    auto start = std::chrono::high_resolution_clock::now();
     jclass detectionClass = env->FindClass("com/lovelyzzkei/qnnSkeleton/ARActivity$YoloDetection");
     jobjectArray detectionArray = env->NewObjectArray(detectionResults.size(), detectionClass, nullptr);
     jmethodID constructor = env->GetMethodID(detectionClass, "<init>", "(FFFFFLjava/lang/String;)V");
@@ -124,6 +124,9 @@ Java_com_lovelyzzkei_qnnSkeleton_ARActivity_getObjectBoxesJNI(JNIEnv *env, jobje
         env->SetObjectArrayElement(detectionArray, i, detectionObject);
         env->DeleteLocalRef(clsName);
     }
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration<double, std::milli>(end - start);
+    LOGD("jni conversion time: %.3f ms", duration.count());
 
     return detectionArray;
 }

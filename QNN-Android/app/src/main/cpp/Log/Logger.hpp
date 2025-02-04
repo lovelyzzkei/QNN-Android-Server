@@ -19,6 +19,11 @@
 
 #define __FILENAME__ (strrchr(__FILE__, '/') + 1)
 
+#define LOG_TAG "CYJUNG"
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
+#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+
 /**
  * @brief Log something with the current logger. Always valid to call, though
  *        it won't do something if no logger has been set.

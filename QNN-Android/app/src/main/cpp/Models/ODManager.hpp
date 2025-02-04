@@ -7,11 +7,8 @@
 
 #include <vector>
 #include "opencv2/opencv.hpp"
-#include "../TFLiteManager.hpp"
 
 #include "android/log.h"
-#include "tensorflow/lite/model.h"
-#include "tensorflow/lite/interpreter.h"
 #include "../QnnManager.hpp"
 
 #define LOG_TAG "CYJUNG"
@@ -62,7 +59,6 @@ private:
             const std::vector<float>& class_idx,            // (1, N_OBJS)
             float score_threshold, float iou_threshold);
     std::vector<Detection> nonMaximumSuppression(const std::vector<Detection>& detections, float iou_threshold);
-    template <typename T> std::vector<T> tensorToVector(const TfLiteTensor* tensor);
 
 // PRIVATE VARIABLES
 private:
@@ -70,11 +66,9 @@ private:
     int height;
     int numObjects;
     std::vector<std::string> classNames;
-    std::unique_ptr<tflite::Interpreter> mODModel;
 
     const char *framework;
     QnnManager* qnnManager = nullptr;
-    TFLiteManager* tfLiteManager = nullptr;
 };
 
 #endif //QNNSKELETON_ODMANAGER_HPP

@@ -8,10 +8,44 @@
 
 The Goal of this project is to provide guidelines and a sample Android app to use Qualcomm QNN easily. ***Currently, I only tested running QNN model by FP16. I'll keep maintaining this code to support some other DNN models and other arithmetic precisions.***
 
+I tested QNN-Android at the setting below.  
+- Android Studio 24.02 Ladybug Feature Drop
+
+
 ## Prerequiste
 - Qualcomm® AI Engine Direct setup should be completed by following the guide [here](https://docs.qualcomm.com/bundle/publicresource/topics/80-63442-50/setup.html).
 - Android device 6.0 and above can be used to test the application.
-- If you want to use TFLite, you have to move your TFLite libraries in `QNN-Android/app/libs`
+
+## Getting Started
+1. Run `resolveAndroidDependencies.sh` to copy QNN NPU libraries to the Android project and download OpenCV library.
+```
+bash resolveAndroidDependencies.sh
+```
+
+2. Add below code snippets to the `QNN-Android/sdk/build.gradle` (build.gradle in OpenCV) since AGP Ladybug has `namespace` features
+```gradle
+android {
+    compileSdkVersion 26
+    namespace 'org.opencv'
+
+    defaultConfig {
+        namespace 'org.opencv'
+        ...
+    }
+    ...
+
+    buildFeatures {
+        aidl = true
+        buildConfig = true
+    }
+}
+```
+
+3. Add the models you want to the android project. You can refer the codes in `Server` folder to download model at the Qualcomm AI Hub and convert properly.
+
+4. **Write appropriate preprocessing/postprocessing code for the model. Currently, only pipeline for YOLOv6 model exists.**
+
+
 
 ## Source Overview
 ### Source Organization
