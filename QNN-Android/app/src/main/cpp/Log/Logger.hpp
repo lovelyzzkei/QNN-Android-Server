@@ -19,10 +19,22 @@
 
 #define __FILENAME__ (strrchr(__FILE__, '/') + 1)
 
-#define LOG_TAG "CYJUNG"
+
+// Logging codes for this project
+#define LOG_TAG "QNN"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
 #define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+
+
+auto logExecutionTime = [](const std::string &stage, auto &&func) {
+    auto start = std::chrono::high_resolution_clock::now();
+    func();
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration<double, std::milli>(end - start);
+    LOGD("%s time: %.3f ms", stage.c_str(), duration.count());
+};
+
 
 /**
  * @brief Log something with the current logger. Always valid to call, though

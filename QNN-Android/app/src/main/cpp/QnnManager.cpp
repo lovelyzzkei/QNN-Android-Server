@@ -70,7 +70,6 @@ StatusCode QnnManager::prepareQnnManager(std::string modelPath, std::string back
     m_outputDataType   = iotensor::OutputDataType::FLOAT_AND_NATIVE;
     m_inputDataType    = iotensor::InputDataType::FLOAT;
 
-
     // cause we build graph in runtime, the freeGraphInfoFnHandle should be assigned here
     if (dynamicloadutil::StatusCode::SUCCESS != statusCode) {
         if (dynamicloadutil::StatusCode::FAIL_LOAD_BACKEND == statusCode) {
@@ -252,6 +251,7 @@ StatusCode QnnManager::inferenceModel(float32_t* input_buffer) {
             QNN_ERROR("Execute Status: %d", executeStatus);
             return StatusCode::FAILURE;
         }
+        extractBackendProfilingInfo(m_profileBackendHandle);
 
 
         // Retrieve output tensor data
@@ -459,7 +459,7 @@ StatusCode QnnManager::initializeProfiling() {
         QNN_INFO("Profiling turned on; level = %d", (int)m_profilingLevel);
         if (ProfilingLevel::BASIC == m_profilingLevel) {
             QNN_INFO("Basic profiling requested. Creating Qnn Profile object.");
-            if (QNN_PROFILE_NO_ERROR != m_qnnFunctionPointers.qnnInterface.profileCreate(m_backendHandle, QNN_PROFILE_LEVEL_BASIC, &m_profileBackendHandle)) {
+            if (QNN_PROFILE_NO_ERROR != m_qnnFunctionPointers.qnnInterface.profileCreate(m_backendHandle, QNN_PROFILE_EVENTTYPE_EXECUTE, &m_profileBackendHandle)) {
                 QNN_WARN("Unable to create profile handle in the backend.");
                 return StatusCode::FAILURE;
             }
@@ -489,20 +489,110 @@ StatusCode QnnManager::createContext() {
 }
 
 
+// Get graph name from user provided model by calling composeGraphs()
+StatusCode QnnManager::getGraphName(char* graphName) {
+    Qnn_ContextHandle_t tmp_context = nullptr;
+    qnn_wrapper_api::GraphInfo_t **tmp_graphsInfo = nullptr;
+    uint32_t tmp_graphsCount;
+
+    // Temporarily create context to get graph name
+    m_qnnFunctionPointers.qnnInterface.contextCreate(m_backendHandle,
+                                                     m_deviceHandle,
+                                                     (const QnnContext_Config_t**)m_contextConfig,
+                                                     &tmp_context);
+
+    auto composeGraphStatus = m_qnnFunctionPointers.composeGraphsFnHandle(
+            m_backendHandle,
+            m_qnnFunctionPointers.qnnInterface,
+            tmp_context,
+            (const qnn_wrapper_api::GraphConfigInfo_t**)m_graphConfigsInfo,
+            m_graphConfigsInfoCount,
+            &tmp_graphsInfo,
+            &tmp_graphsCount,
+            false
+    );
+    if (qnn_wrapper_api::ModelError_t::MODEL_NO_ERROR != composeGraphStatus) {
+        QNN_ERROR("Failed in composeGraphs()");
+        return StatusCode::FAILURE;
+    }
+
+    // Assume single graph for now
+    if (tmp_graphsCount == 1) {
+        strcpy(graphName, tmp_graphsInfo[0]->graphName);
+    } else {
+        QNN_ERROR("Multiple graphs not supported");
+        return StatusCode::FAILURE;
+    }
+    QNN_INFO("Graph Name: %s", graphName);
+
+    // Free graph
+//    auto status = QnnModel_freeGraphsInfo(
+//            reinterpret_cast<qnn_wrapper_api::GraphInfoPtr_t **>(tmp_graphsInfo), tmp_graphsCount);
+//    if (qnn_wrapper_api::ModelError_t::MODEL_NO_ERROR != status) {
+//        return StatusCode::FAILURE;
+//    }
+    m_qnnFunctionPointers.qnnInterface.contextFree(tmp_context, nullptr);
+    return StatusCode::SUCCESS;
+}
+
+
+
+
 // Calls composeGraph function in QNN's model.so.
 // composeGraphs is supposed to populate graph related
 // information in m_graphsInfo and m_graphsCount.
 // m_debug is the option supplied to composeGraphs to
 // say that all intermediate tensors including output tensors
 // are expected to be read by the app.
+// TODO: Create graph without using composeGraph()?
 StatusCode QnnManager::composeGraphs() {
+    // Get graph name
+    char graphName[500];
+    if (StatusCode::SUCCESS != getGraphName(graphName)) {
+        QNN_ERROR("Failed to get graph name");
+        return StatusCode::FAILURE;
+    }
+
+    // 1) A custom config structure for FLOAT16 precision
+    static QnnHtpGraph_CustomConfig_t g_fp16PrecisionConfig = {
+        .option    = QNN_HTP_GRAPH_CONFIG_OPTION_PRECISION,
+        .precision = QNN_PRECISION_FLOAT16
+    };
+
+    // 2) Wrap that in a standard QnnGraph_Config_t
+    static QnnGraph_Config_t g_fp16GraphConfig = {
+            .option       = QNN_GRAPH_CONFIG_OPTION_CUSTOM,
+            .unnamedUnion = { .customConfig = &g_fp16PrecisionConfig }
+    };
+
+    static const QnnGraph_Config_t* g_myGraphConfigs[] = {
+            &g_fp16GraphConfig,
+            nullptr             // always null-terminated
+    };
+
+    static qnn_wrapper_api::GraphConfigInfo_t g_fp16GraphConfigInfo = {
+            /* name */         graphName,
+            /* graphConfigs */ g_myGraphConfigs,
+            // ... if there are other fields in GraphConfigInfo_t, set them as needed
+    };
+
+    static qnn_wrapper_api::GraphConfigInfo_t* g_allGraphConfigs[] = {
+            &g_fp16GraphConfigInfo,
+            nullptr // null-terminator if your code expects that
+    };
+
+    // Then the count:
+    static constexpr uint32_t g_numGraphConfigs = 1; // One entry above
+
     auto returnStatus = StatusCode::SUCCESS;
     auto composeGraphStatus = m_qnnFunctionPointers.composeGraphsFnHandle(
             m_backendHandle,
             m_qnnFunctionPointers.qnnInterface,
             m_context,
-            (const qnn_wrapper_api::GraphConfigInfo_t**)m_graphConfigsInfo,
-            m_graphConfigsInfoCount,
+            (const qnn_wrapper_api::GraphConfigInfo_t**)g_allGraphConfigs,
+            g_numGraphConfigs,
+//            (const qnn_wrapper_api::GraphConfigInfo_t**)m_graphConfigsInfo,
+//            m_graphConfigsInfoCount,
             &m_graphsInfo,
             &m_graphsCount,
             false
@@ -513,6 +603,12 @@ StatusCode QnnManager::composeGraphs() {
         QNN_ERROR("Failed in composeGraphs()");
         returnStatus = StatusCode::FAILURE;
     }
+
+    // Config FP16 after compose graph?
+    for (int i = 0; i < m_graphsCount; i++) {
+        QNN_INFO("Graph Config Info: %s", m_graphsInfo[i]->graphName);
+    }
+
     QNN_INFO("Graph compose status: %d", (unsigned int)composeGraphStatus);
     return returnStatus;
 }
@@ -534,7 +630,6 @@ StatusCode QnnManager::finalizeGraphs() {
     if (ProfilingLevel::OFF != m_profilingLevel) {
         extractBackendProfilingInfo(m_profileBackendHandle);
     }
-//    graphInfoMap_[qnnModelIndex_] = graphInfo;    mllm에서는 여러 그래프를 map에 저장
     return StatusCode::SUCCESS;
 }
 

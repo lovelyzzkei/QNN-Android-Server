@@ -73,6 +73,7 @@ private:
         return qnn_wrapper_api::freeGraphsInfo(graphsInfo, numGraphsInfo);
     }
 
+
     StatusCode initialize();
     StatusCode initializeBackend();
     StatusCode initializeProfiling();
@@ -84,6 +85,8 @@ private:
     StatusCode composeGraphs();
     StatusCode finalizeGraphs();
     StatusCode createFromBinary();
+
+    StatusCode getGraphName(char* graphName);
 
     StatusCode fillDims(std::vector<size_t>& dims,uint32_t* inDimensions, uint32_t rank);
     StatusCode copyFromFloatToNative(float32_t* floatBuffer, Qnn_Tensor_t* tensor);

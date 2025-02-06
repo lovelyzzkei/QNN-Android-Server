@@ -10,6 +10,7 @@
 #include "ODManager.hpp"
 #include "../QnnTypeMacros.hpp"
 #include "../QnnManager.hpp"
+#include "Log/Logger.hpp"
 
 
 ODManager::ODManager() {
@@ -36,14 +37,6 @@ ODManager::ODManager(const char* device,
 ODManager::~ODManager() {
 }
 
-
-auto logExecutionTime = [](const std::string &stage, auto &&func) {
-    auto start = std::chrono::high_resolution_clock::now();
-    func();
-    auto end = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration<double, std::milli>(end - start);
-    LOGD("%s time: %.3f ms", stage.c_str(), duration.count());
-};
 
 
 

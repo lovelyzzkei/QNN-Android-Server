@@ -7,14 +7,7 @@
 
 #include <vector>
 #include "opencv2/opencv.hpp"
-
-#include "android/log.h"
-#include "../QnnManager.hpp"
-
-#define LOG_TAG "CYJUNG"
-#define LOGI(...) __android_log_print(ANDROID_LOG_INFO,LOG_TAG,__VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,LOG_TAG,__VA_ARGS__)
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG,LOG_TAG,__VA_ARGS__)
+#include "QnnManager.hpp"
 
 struct Detection {
     float x1;
@@ -40,7 +33,6 @@ public:
 
     void preprocessImage(cv::Mat &mrgb);
     std::vector<Detection> doODInference(cv::Mat &mrgb); // Object Detection Inference
-    std::vector<Detection> postprocessResults();
     std::vector<Detection> postprocessResultsQNN(
             std::vector<std::pair<std::vector<size_t>, float32_t*>> dets);
 
@@ -52,7 +44,6 @@ public:
 // PRIVATE FUNCTIONS
 private:
     void loadClassNames();
-    void prepareODModel(const char* device);
     std::vector<Detection> filterHighConfBoxes(
             const std::vector<std::vector<float>>& boxes,  // (1, N_OBJS, 4)
             const std::vector<float>& scores,             // (1, N_OBJS)

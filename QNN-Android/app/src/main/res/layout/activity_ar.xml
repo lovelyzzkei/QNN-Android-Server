@@ -9,7 +9,6 @@
     android:layout_height="match_parent"
     tools:context="com.lovelyzzkei.qnnSkeleton.ARActivity">
 
-    <!-- 로딩 화면 -->
     <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"
@@ -66,15 +65,25 @@
         android:layout_gravity="center"
         android:visibility="visible"/>
 
-    <ImageButton
-        android:id="@+id/settings_button"
+<!--    <ImageButton-->
+<!--        android:id="@+id/settings_button"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_alignParentEnd="true"-->
+<!--        android:layout_alignParentTop="true"-->
+<!--        android:layout_margin="25dp"-->
+<!--        android:src="@drawable/ic_settings"-->
+<!--        android:background="@android:color/transparent"/>-->
+
+    <Switch
+        android:id="@+id/task_switch"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_margin="10dp"
         android:layout_alignParentEnd="true"
-        android:layout_alignParentTop="true"
-        android:layout_margin="25dp"
-        android:src="@drawable/ic_settings"
-        android:background="@android:color/transparent"/>
+        android:textSize="16sp"
+        android:text="Use model"
+        android:switchMinWidth="60dp"/>
 
 </RelativeLayout>
 

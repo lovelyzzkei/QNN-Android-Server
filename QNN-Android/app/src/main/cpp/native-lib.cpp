@@ -5,8 +5,11 @@
 #include <android/asset_manager.h>
 #include <android/asset_manager_jni.h>
 
-#include "Models/ODManager.hpp"
 #include "QnnManager.hpp"
+#include "DEManager.hpp"
+#include "ODManager.hpp"
+
+#include "Log/Logger.hpp"
 
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
@@ -30,8 +33,8 @@ bool SetAdspLibraryPath(std::string nativeLibPath)
 
 extern "C"
 JNIEXPORT jstring JNICALL
-Java_com_lovelyzzkei_qnnSkeleton_ARActivity_setAdspLibraryPathJNI(JNIEnv *env,
-                                                         jobject thiz,
+Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_setAdspLibraryPathJNI(JNIEnv *env,
+                                                                       jclass thiz,
                                                          jstring native_dir_path) {
     const char *cstr = env->GetStringUTFChars(native_dir_path, NULL);
     env->ReleaseStringUTFChars(native_dir_path, cstr);
@@ -69,11 +72,12 @@ bool createDirectory(const std::string& path) {
 
 
 ODManager* gODManager = nullptr;
+DEManager* gDEManager = nullptr;
 
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_lovelyzzkei_qnnSkeleton_ARActivity_initializeODManagerJNI(JNIEnv *env, jobject thiz,
+Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_initializeODManagerJNI(JNIEnv *env, jclass thiz,
                                                          jstring jDevice, jstring jNativeLibPath,
                                                          jstring jModel, jstring jBackend,
                                                          jstring jPrecision, jstring jFramework) {
@@ -92,10 +96,31 @@ Java_com_lovelyzzkei_qnnSkeleton_ARActivity_initializeODManagerJNI(JNIEnv *env, 
 }
 
 
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_initializeDEManagerJNI(JNIEnv *env, jclass thiz,
+                                                                   jstring jDevice, jstring jNativeLibPath,
+                                                                   jstring jModel, jstring jBackend,
+                                                                   jstring jPrecision, jstring jFramework) {
+    const char* device = env->GetStringUTFChars(jDevice, NULL);
+    const char* model = env->GetStringUTFChars(jModel, NULL);
+    const char* backend = env->GetStringUTFChars(jBackend, NULL);
+    const char* precision = env->GetStringUTFChars(jPrecision, NULL);
+    const char* framework = env->GetStringUTFChars(jFramework, NULL);
+    const char* nativeLibPath = env->GetStringUTFChars(jNativeLibPath, NULL);
+
+    // Set Adsp library path
+    if (!SetAdspLibraryPath(nativeLibPath)) {
+        LOGI("Failed to set ADSP Library Path\n");
+    }
+    gDEManager = new DEManager(device, model, backend, precision, framework);
+}
+
+
 
 extern "C"
 JNIEXPORT jobjectArray JNICALL
-Java_com_lovelyzzkei_qnnSkeleton_ARActivity_getObjectBoxesJNI(JNIEnv *env, jobject thiz,
+Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getObjectBoxesJNI(JNIEnv *env, jclass thiz,
                                                     jbyteArray YUVFrameData, jint width,
                                                     jint height) {
     jbyte * pYUVFrameData = env->GetByteArrayElements(YUVFrameData, 0);
@@ -110,7 +135,7 @@ Java_com_lovelyzzkei_qnnSkeleton_ARActivity_getObjectBoxesJNI(JNIEnv *env, jobje
     std::vector<Detection> detectionResults = gODManager->doODInference(mrgb);
 
     auto start = std::chrono::high_resolution_clock::now();
-    jclass detectionClass = env->FindClass("com/lovelyzzkei/qnnSkeleton/ARActivity$YoloDetection");
+    jclass detectionClass = env->FindClass("com/lovelyzzkei/qnnSkeleton/tasks/ObjectDetectionManager$YoloDetection");
     jobjectArray detectionArray = env->NewObjectArray(detectionResults.size(), detectionClass, nullptr);
     jmethodID constructor = env->GetMethodID(detectionClass, "<init>", "(FFFFFLjava/lang/String;)V");
 
@@ -130,3 +155,26 @@ Java_com_lovelyzzkei_qnnSkeleton_ARActivity_getObjectBoxesJNI(JNIEnv *env, jobje
 
     return detectionArray;
 }
+
+
+
+
+extern "C"
+JNIEXPORT jfloatArray JNICALL
+Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getDepthMapJNI(JNIEnv *env, jobject thiz,
+                                                          jbyteArray YUVFrameData, jint width,
+                                                          jint height) {
+    jbyte * pYUVFrameData = env->GetByteArrayElements(YUVFrameData, 0);
+
+    // Convert to OpenCV Mat, YUV -> RGB (Originally YUV_420_888)
+    cv::Mat myuv(height + height / 2, width, CV_8UC1, (unsigned char*)pYUVFrameData);
+    cv::Mat mrgb(height, width, CV_8UC3);
+    cv::cvtColor(myuv, mrgb, cv::COLOR_YUV2RGB_NV21, 3);
+
+    auto depthData = gDEManager->doDEInference(mrgb);
+
+    jfloatArray depthDataArray = env->NewFloatArray(depthData.size());
+    env->SetFloatArrayRegion(depthDataArray, 0, depthData.size(), depthData.data());
+    return depthDataArray;
+}
+

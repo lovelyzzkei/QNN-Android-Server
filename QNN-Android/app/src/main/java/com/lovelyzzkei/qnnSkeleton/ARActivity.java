@@ -4,6 +4,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.media.Image;
+import android.opengl.GLES20;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
@@ -16,6 +17,7 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
+import android.widget.Switch;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -54,6 +56,12 @@ import com.google.ar.core.exceptions.UnavailableDeviceNotCompatibleException;
 import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
 import com.lovelyzzkei.qnnSkeleton.samplerender.SampleRender;
+import com.lovelyzzkei.qnnSkeleton.tasks.DepthEstimationManager;
+import com.lovelyzzkei.qnnSkeleton.tasks.ObjectDetectionManager;
+import com.lovelyzzkei.qnnSkeleton.tasks.TaskManagerFactory;
+import com.lovelyzzkei.qnnSkeleton.tasks.base.BaseManager;
+import com.lovelyzzkei.qnnSkeleton.tasks.base.InferenceResult;
+import com.lovelyzzkei.qnnSkeleton.tasks.base.TaskType;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -66,22 +74,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+
+
 public class ARActivity extends AppCompatActivity implements SampleRender.Renderer{
-
-    public static class YoloDetection {
-        public float x1, y1, x2, y2;
-        public float score;
-        public String cls;
-
-        public YoloDetection(float x1, float y1, float x2, float y2, float score, String cls) {
-            this.x1 = x1;
-            this.y1 = y1;
-            this.x2 = x2;
-            this.y2 = y2;
-            this.score = score;
-            this.cls = cls;
-        }
-    }
 
     private static final String TAG = "ARctivity";
     private static final float Z_NEAR = 0.1f;
@@ -115,7 +110,7 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
 
     private BackgroundRenderer backgroundRenderer;
     private Framebuffer virtualSceneFramebuffer;
-    private final List<WrappedAnchor> wrappedAnchors = new ArrayList<>();
+//    private final List<WrappedAnchor> wrappedAnchors = new ArrayList<>();
 
     // Virtual object (ARCore pawn)
     private Mesh virtualObjectMesh;
@@ -125,7 +120,6 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
 
     private boolean hasSetTextureNames = false;
     private boolean installRequested;
-    private boolean isARIAInitialized = false;
     private DisplayRotationHelper displayRotationHelper;
     private final SnackbarHelper messageSnackbarHelper = new SnackbarHelper();
     private final DepthSettings depthSettings = new DepthSettings();
@@ -142,16 +136,13 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
     private final float[] viewInverseMatrix = new float[16];
     private final float[] worldLightDirection = {0.0f, 0.0f, 0.0f, 0.0f};
     private final float[] viewLightDirection = new float[4]; // view x world light direction
-    private Map<String, String> deviceMapping;
-    private String selectedModel;
-    private String selectedBackend;
-    private String selectedPrecision;
-    private String selectedFramework;
 
-    static {
-        System.loadLibrary("imageclassifiers");
-    }
 
+    // Task managers
+    private BaseManager manager;
+    private TaskType selectedTask;
+    private boolean turnOnInference = false;
+    private boolean isInitialized = false;
 
 
     @Override
@@ -168,17 +159,31 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
 
         // Get Intent and retrieve data
         Intent intent = getIntent();
-        selectedModel = intent.getStringExtra("SELECTED_MODEL");
-        selectedBackend = intent.getStringExtra("SELECTED_BACKEND");
-        selectedPrecision = intent.getStringExtra("SELECTED_PRECISION");
-        selectedFramework = intent.getStringExtra("SELECTED_FRAMEWORK");
+        String taskString = intent.getStringExtra("SELECTED_TASK");
+        TaskType selectedTask = TaskType.valueOf(taskString);
+        String selectedModel = intent.getStringExtra("SELECTED_MODEL");
+        String selectedBackend = intent.getStringExtra("SELECTED_BACKEND");
+        String selectedPrecision = intent.getStringExtra("SELECTED_PRECISION");
+        String selectedFramework = intent.getStringExtra("SELECTED_FRAMEWORK");
+
+        Switch taskSwitch = findViewById(R.id.task_switch);
+        taskSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            turnOnInference = isChecked;
+        });
 
         initializeARCoreSession();
 
         loadingOverlay.setVisibility(View.VISIBLE);
         new Thread(() -> {
             try {
-                initialize();
+                String device = getDeviceMapping(android.os.Build.MODEL);
+                String nativeLibDir = this.getApplicationInfo().nativeLibraryDir;
+
+                // Create the manager for the chosen task
+                manager = TaskManagerFactory.createManager(selectedTask);
+                manager.initialize(device, nativeLibDir, selectedModel, selectedBackend, selectedPrecision, selectedFramework);
+
+                isInitialized = true;
             }
             finally {
                 runOnUiThread(() -> loadingOverlay.setVisibility(View.GONE));
@@ -198,33 +203,15 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
         // Set up renderer.
         render = new SampleRender(surfaceView, this, getAssets());
         instantPlacementSettings.onCreate(this);
-
-        ImageButton settingsButton = findViewById(R.id.settings_button);
-        settingsButton.setOnClickListener(
-            v -> {
-                PopupMenu popup = new PopupMenu(ARActivity.this, v);
-                popup.setOnMenuItemClickListener(ARActivity.this::settingsMenuClick);
-                popup.inflate(R.menu.settings_menu);
-                popup.show();
-            }
-        );
     }
 
 
-    private void initialize() {
-        String nativeLibDir = this.getApplicationInfo().nativeLibraryDir;
-        String runtime = setAdspLibraryPathJNI(nativeLibDir);
-        LogUtils.info("Runtime: " + runtime);
-
-        deviceMapping = new HashMap<>();
-        deviceMapping.put("SM-S9210", "s24");
-        deviceMapping.put("SM-S911N", "s23");
-        deviceMapping.put("SM-S901N", "s22");
-        String device = deviceMapping.get(android.os.Build.MODEL);
-
-        initializeODManagerJNI(device, nativeLibDir, selectedModel, selectedBackend, selectedPrecision, selectedFramework);
-
-        isARIAInitialized = true;
+    private String getDeviceMapping(String model) {
+        // or a map from your example
+        if ("SM-S9210".equals(model)) return "s24";
+        if ("SM-S911N".equals(model))  return "s23";
+        if ("SM-S901N".equals(model))  return "s22";
+        return "unknown";
     }
 
 
@@ -297,12 +284,6 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
         // Note that order matters - see the note in onPause(), the reverse applies here.
         try {
             configureSession();   // For ARCore
-            // To record a live camera session for later playback, call
-            // `session.startRecording(recordingConfig)` at anytime. To playback a previously recorded AR
-            // session instead of using the live camera feed, call
-            // `session.setPlaybackDatasetUri(Uri)` before calling `session.resume()`. To
-            // learn more about recording and playback, see:
-            // https://developers.google.com/ar/develop/java/recording-and-playback
             session.resume();
         } catch (CameraNotAvailableException e) {
             messageSnackbarHelper.showError(this, "Camera not available. Try restarting the app.");
@@ -420,16 +401,9 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
                     new int[] {backgroundRenderer.getCameraColorTexture().getTextureId()});
             hasSetTextureNames = true;
         }
-
-        // -- Update per-frame state
-
-        // Notify ARCore session that the view size changed so that the perspective matrix and
-        // the video background can be properly adjusted.
         displayRotationHelper.updateSessionIfNeeded(session);
 
-        // Obtain the current frame from the AR Session. When the configuration is set to
-        // UpdateMode.BLOCKING (it is by default), this will throttle the rendering to the
-        // camera framerate.
+
         Frame frame;
         try {
             frame = session.update();
@@ -441,7 +415,7 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
         Camera camera = frame.getCamera();
 
         Image cameraImage = null;
-        if (camera.getTrackingState() == TrackingState.TRACKING && isARIAInitialized) {
+        if (camera.getTrackingState() == TrackingState.TRACKING && isInitialized) {
             try {
                 cameraImage = frame.acquireCameraImage();
 
@@ -455,7 +429,7 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
         try {
             backgroundRenderer.setUseDepthVisualization(
                     render,
-                    (depthSettings.arCoreDepthColorVisualizationEnabled()));
+                    (manager.getTaskType().name().equals("DEPTH_ESTIMATION") && turnOnInference));
             backgroundRenderer.setUseOcclusion(render, depthSettings.useDepthForOcclusion());
         } catch (IOException e) {
             Log.e(TAG, "Failed to read a required asset file", e);
@@ -468,22 +442,24 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
 
 
         if (camera.getTrackingState() == TrackingState.TRACKING) {
-            if (depthSettings.arCoreDepthColorVisualizationEnabled()) {
-                try (Image depthImage = frame.acquireDepthImage()) {
-                    backgroundRenderer.updateCameraDepthTexture(depthImage);
-                }
-                catch (NotYetAvailableException e) {
-                    // This normally means that depth data is not available yet. This is normal so we will not
-                    // spam the logcat with this.
-                }
-            }
-            if (depthSettings.odEnabled()) {
-                double startTime = System.currentTimeMillis();
-                YoloDetection[] detections = getObjectBoxes(cameraImage);
-                double endTime = System.currentTimeMillis();
-                LogUtils.info("Object detection time: " + (endTime - startTime) + "ms");
+            if (isInitialized && cameraImage != null && turnOnInference) {
+                // Convert YUV image to RGB and pass it to JNI
+                byte[] cameraImageData = convertImage2YUVBuffer(cameraImage);
+                int width = cameraImage.getWidth();
+                int height = cameraImage.getHeight();
+                InferenceResult result = manager.runInference(cameraImageData, width, height);
 
-                detectionOverlayView.setDetections(Arrays.asList(detections));
+                if (result instanceof ObjectDetectionManager.DetectionResult) {
+                    ObjectDetectionManager.DetectionResult detectionResult = (ObjectDetectionManager.DetectionResult) result;
+                    ObjectDetectionManager.YoloDetection[] detections = detectionResult.detections;
+                    detectionOverlayView.setDetections(Arrays.asList(detections));
+                }
+                else if (result instanceof DepthEstimationManager.DepthResult) {
+                    DepthEstimationManager.DepthResult depthResult = (DepthEstimationManager.DepthResult) result;
+                    float[] depthMap = depthResult.depthMap;
+                    renderDepthMap(depthMap);
+                }
+
             }
         }
 
@@ -493,9 +469,6 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
         }
 
 
-        // Handle one tap per frame.
-        MotionEvent tap = tapHelper.poll(); // TapHelper는 터치 이벤트 큐를 관리
-        handleTapWithCustomDepth(frame, camera, tap);
 
         // -- Draw background
         if (frame.getTimestamp() != 0) {
@@ -524,27 +497,6 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
 
         // Visualize anchors created by touch.
         render.clear(virtualSceneFramebuffer, 0f, 0f, 0f, 0f);
-        for (WrappedAnchor wrappedAnchor : wrappedAnchors) {
-            Anchor anchor = wrappedAnchor.getAnchor();
-
-
-            // ODOMETRY USED PARTS
-            // Get the current pose of an Anchor in world space. The Anchor pose is updated
-            // during calls to session.update() as ARCore refines its estimate of the world.
-            anchor.getPose().toMatrix(modelMatrix, 0);
-
-            // Calculate model/view/projection matrices
-            Matrix.multiplyMM(modelViewMatrix, 0, viewMatrix, 0, modelMatrix, 0);
-            Matrix.multiplyMM(modelViewProjectionMatrix, 0, projectionMatrix, 0, modelViewMatrix, 0);
-
-            // Update shader properties and draw
-            virtualObjectShader.setMat4("u_ModelView", modelViewMatrix);
-            virtualObjectShader.setMat4("u_ModelViewProjection", modelViewProjectionMatrix);
-            virtualObjectShader.setTexture("u_AlbedoTexture", virtualObjectAlbedoTexture);
-
-
-            render.draw(virtualObjectMesh, virtualObjectShader, virtualSceneFramebuffer);
-        }
 
         // Compose the virtual scene with the background.
         backgroundRenderer.drawVirtualScene(render, virtualSceneFramebuffer, Z_NEAR, Z_FAR);
@@ -563,29 +515,6 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
             surfaceView.onPause();
             session.pause();
         }
-    }
-
-    public ByteBuffer convertFloatArrayTo16BitByteBuffer(float[] depthArray) {
-        // 1. Short 배열 생성 (float -> short 변환)
-        short[] shortArray = new short[depthArray.length];
-        for (int i = 0; i < depthArray.length; i++) {
-            // Depth 값을 밀리미터로 변환 후 short로 캐스팅
-            shortArray[i] = (short) (depthArray[i] * 1000.0f); // float 값 (미터) -> short 값 (밀리미터)
-        }
-
-        // 2. ByteBuffer 생성 및 Little-Endian 설정
-        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(shortArray.length * Short.BYTES);
-        byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-
-        // 3. Short 데이터를 ByteBuffer에 추가
-        for (short value : shortArray) {
-            byteBuffer.putShort(value);
-        }
-
-        // 4. ByteBuffer의 위치를 0으로 재설정
-        byteBuffer.rewind();
-
-        return byteBuffer;
     }
 
     /** Configures the session with feature settings. */
@@ -658,6 +587,15 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
                 "u_SphericalHarmonicsCoefficients", sphericalHarmonicsCoefficients);
     }
 
+    private void renderDepthMap(float[] depthMap) {
+        // Postprocessing for rendering
+        ByteBuffer depthBuffer = ((DepthEstimationManager) manager).convertFloatArrayTo16BitByteBuffer(depthMap);
+        // TODO: Adjust to model output
+        int depthWidth = 322;
+        int depthHeight = 238;
+        backgroundRenderer.updateCameraAriaDepthTexture(depthBuffer, depthWidth, depthHeight);
+    }
+
 
     // Image is same as Camera2 API
     // Convert YUV image to RGB and pass it to JNI
@@ -680,107 +618,13 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
     }
 
 
-    public YoloDetection[] getObjectBoxes(Image cameraImage) {
+    public ObjectDetectionManager.YoloDetection[] getObjectBoxes(Image cameraImage) {
         byte[] cameraImageData = convertImage2YUVBuffer(cameraImage);
         int width = cameraImage.getWidth();
         int height = cameraImage.getHeight();
-        return getObjectBoxesJNI(cameraImageData, width, height);
+        return NativeInterface.getObjectBoxesJNI(cameraImageData, width, height);
     }
 
-    public void addAnchor(Anchor anchor) {
-        if (wrappedAnchors.size() >= 20) {
-            wrappedAnchors.get(0).getAnchor().detach();
-            wrappedAnchors.remove(0);
-        }
-        wrappedAnchors.add(new WrappedAnchor(anchor));
-    }
-
-    public void handleTapWithCustomDepth(Frame frame, Camera camera, MotionEvent tap) {
-        if (tap == null || camera.getTrackingState() != TrackingState.TRACKING) {
-            return;
-        }
-
-        int tappedX = (int) tap.getX();
-        int tappedY = (int) tap.getY();
-
-        try (Image customDepthImage = frame.acquireDepthImage()) {
-            int depthValue = getDepthValue(customDepthImage, tappedX, tappedY);
-            if (depthValue <= 0) {
-                Log.e("Depth", "Invalid depth value at (" + tappedX + ", " + tappedY + ")");
-                return;
-            }
-
-            float[] cameraCoords = convertDepthToCameraCoords(frame, customDepthImage, tappedX, tappedY, depthValue);
-            float[] worldCoords = convertCameraToWorldCoords(frame, cameraCoords);
-
-            Anchor anchor = session.createAnchor(new Pose(worldCoords, new float[]{0.0f, 0.0f, 0.0f, 1.0f}));
-            addAnchor(anchor);
-
-            Log.d("CustomDepth", "Object placed at world coordinates: " + worldCoords[0] + ", " + worldCoords[1] + ", " + worldCoords[2]);
-        } catch (Exception e) {
-            Log.e("CustomDepth", "Error processing tap with custom depth data", e);
-        }
-    }
-
-    private int getDepthValue(Image depthImage, int tappedX, int tappedY) {
-        int displayWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
-        int displayHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
-
-        int depthX = tappedX * depthImage.getHeight() / displayWidth;
-        int depthY = tappedY * depthImage.getWidth() / displayHeight;
-
-        ByteBuffer depthByteBuffer = ByteBuffer.allocate(depthImage.getPlanes()[0].getBuffer().capacity());
-        depthByteBuffer.order(ByteOrder.LITTLE_ENDIAN);
-        depthByteBuffer.put(depthImage.getPlanes()[0].getBuffer());
-        depthByteBuffer.rewind();
-
-        ShortBuffer depthBuffer = depthByteBuffer.asShortBuffer();
-        return depthBuffer.get(depthX * depthImage.getWidth() + depthY);
-    }
-
-    private float[] convertDepthToCameraCoords(Frame frame, Image depthImage, int tappedX, int tappedY, int depthMillimeters) {
-        float depthMeters = depthMillimeters / 1000.0f;
-        CameraIntrinsics intrinsics = frame.getCamera().getTextureIntrinsics();
-
-        float fx = intrinsics.getFocalLength()[0];
-        float fy = intrinsics.getFocalLength()[1];
-        float cx = intrinsics.getPrincipalPoint()[0];
-        float cy = intrinsics.getPrincipalPoint()[1];
-        int[] dimensions = intrinsics.getImageDimensions();
-
-        int displayWidth = Resources.getSystem().getDisplayMetrics().widthPixels;
-        int displayHeight = Resources.getSystem().getDisplayMetrics().heightPixels;
-
-        float[] cameraCoords = new float[3];
-        cameraCoords[0] = depthMeters * ((tappedY * dimensions[0] / (float) displayHeight) - cx) / fx;
-        cameraCoords[1] = depthMeters * ((tappedX * dimensions[1] / (float) displayWidth) - cy) / fy;
-        cameraCoords[2] = -depthMeters;
-
-        return cameraCoords;
-    }
-
-    private float[] convertCameraToWorldCoords(Frame frame, float[] cameraCoords) {
-        Pose cameraPose = frame.getCamera().getPose();
-        float[] translation = cameraPose.getTranslation();
-        float[] q1 = cameraPose.getRotationQuaternion();
-
-        float[] p1 = new float[]{cameraCoords[0], cameraCoords[1], cameraCoords[2], 0};
-        float[] qStar = new float[]{-q1[0], -q1[1], -q1[2], q1[3]};
-        float[] pPrime = multiplyQuaternion(multiplyQuaternion(q1, p1), qStar);
-
-        return new float[]{pPrime[0] + translation[0], pPrime[1] + translation[1], pPrime[2] + translation[2]};
-    }
-
-    private float[] multiplyQuaternion(float[] q1, float[] q2){
-        float x1 = q1[0],y1 = q1[1], z1 = q1[2], w1 = q1[3];
-        float x2 = q2[0],y2 = q2[1], z2 = q2[2], w2 = q2[3];
-        return new float[]{
-                w1*x2 + x1*w2 + y1*z2 - z1*y2, //x
-                w1*y2 - x1*z2 + y1*w2 + z1*x2, //y
-                w1*z2 + x1*y2 - y1*x2 + z1*w2, //z
-                w1*w2 - x1*x2 - y1*y2 - z1*z2  //w
-        };
-    }
 
     private void applySettingsMenuDialogCheckboxes() {
         depthSettings.setUseDepthForOcclusion(depthSettingsMenuDialogCheckboxes[0]);
@@ -840,60 +684,41 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
         return false;
     }
 
-    public ByteBuffer convertFloatArrayToByteBuffer(float[] floatArray) {
-        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(floatArray.length * Float.BYTES);
-        byteBuffer.order(ByteOrder.nativeOrder());
-
-        boolean idx = true;
-        for (float value : floatArray) {
-            if (idx) {
-                idx = false;
-                LogUtils.info("Depth value: " + value);
-            }
-            byteBuffer.putFloat(value*1000);
-        }
-
-        byteBuffer.rewind();
-
-        return byteBuffer;
-    }
-
 
     private void hideSystemUI() {
         getWindow().getDecorView().setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN);
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
     }
 
-    public native String setAdspLibraryPathJNI(String nativeLibDir);
-    public native void initializeODManagerJNI(String device, String nativeLibDir, String model, String backend, String precision, String framework);
-    public native YoloDetection[] getObjectBoxesJNI(byte[] cameraImageBuffer, int width, int height);
+//    public native String setAdspLibraryPathJNI(String nativeLibDir);
+//    public native void initializeODManagerJNI(String device, String nativeLibDir, String model, String backend, String precision, String framework);
+//    public native YoloDetection[] getObjectBoxesJNI(byte[] cameraImageBuffer, int width, int height);
 }
 
 /**
  * Associates an Anchor with the trackable it was attached to. This is used to be able to check
  * whether or not an Anchor originally was attached to an {@link InstantPlacementPoint}.
  */
-class WrappedAnchor {
-    private Anchor anchor;
-//    private Trackable trackable;
-
-    public WrappedAnchor(Anchor anchor) {
-        this.anchor = anchor;
-//        this.trackable = trackable;
-    }
-
-    public Anchor getAnchor() {
-        return anchor;
-    }
-
-//    public Trackable getTrackable() {
-//        return trackable;
+//class WrappedAnchor {
+//    private Anchor anchor;
+////    private Trackable trackable;
+//
+//    public WrappedAnchor(Anchor anchor) {
+//        this.anchor = anchor;
+////        this.trackable = trackable;
 //    }
-}
-
-
+//
+//    public Anchor getAnchor() {
+//        return anchor;
+//    }
+//
+////    public Trackable getTrackable() {
+////        return trackable;
+////    }
+//}
+//

@@ -159,7 +159,7 @@ typedef enum {
  */
 typedef struct {
   QnnGraph_ConfigOption_t option;
-  union UNNAMED {
+  union {
     QnnGraph_CustomConfig_t customConfig;
     Qnn_Priority_t priority;
     Qnn_ProfileHandle_t profileHandle;

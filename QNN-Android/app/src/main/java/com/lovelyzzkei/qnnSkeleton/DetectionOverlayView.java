@@ -8,7 +8,7 @@ import android.util.AttributeSet;
 import android.view.View;
 
 import java.util.List;
-import com.lovelyzzkei.qnnSkeleton.ARActivity.YoloDetection;
+import com.lovelyzzkei.qnnSkeleton.tasks.ObjectDetectionManager.YoloDetection;
 import com.lovelyzzkei.qnnSkeleton.common.LogUtils;
 
 public class DetectionOverlayView extends View{
