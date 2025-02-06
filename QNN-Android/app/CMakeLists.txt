@@ -8,11 +8,6 @@ cmake_minimum_required(VERSION 3.22.1)
 project("QnnAndroid")
 
 
-# OPENCV
-set(pathOPENCV ${CMAKE_CURRENT_SOURCE_DIR}/../OpenCV)
-set(pathLIBOPENCV_JAVA ${pathOPENCV}/native/libs/${ANDROID_ABI}/libopencv_java4.so)
-
-
 set(BUILD_SUBDIR ${ANDROID_ABI})
 
 find_package(OpenMP)

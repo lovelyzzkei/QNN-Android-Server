@@ -12,7 +12,10 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.lovelyzzkei.qnnSkeleton.common.LogUtils;
 import com.lovelyzzkei.qnnSkeleton.tasks.base.TaskType;
+
+import java.io.File;
 
 public class MainActivity extends AppCompatActivity {
     @Override

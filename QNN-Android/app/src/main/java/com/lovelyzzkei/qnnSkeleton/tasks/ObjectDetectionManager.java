@@ -6,6 +6,8 @@ import com.lovelyzzkei.qnnSkeleton.tasks.base.BaseManager;
 import com.lovelyzzkei.qnnSkeleton.tasks.base.InferenceResult;
 import com.lovelyzzkei.qnnSkeleton.tasks.base.TaskType;
 
+import java.lang.annotation.Native;
+
 public class ObjectDetectionManager implements BaseManager {
     private final TaskType taskType = TaskType.OBJECT_DETECTION;
     public static class YoloDetection {
@@ -36,7 +38,16 @@ public class ObjectDetectionManager implements BaseManager {
     public void initialize(String device, String nativeLibDir,
                            String model, String backend,
                            String precision, String framework) {
-        NativeInterface.initializeODManagerJNI(device, nativeLibDir, model, backend, precision, framework);
+//        NativeInterface.initializeODManagerJNI(device, nativeLibDir, model, backend, precision, framework);
+        NativeInterface.initializeModelJNI(
+                taskType.ordinal(),
+                device,
+                nativeLibDir,
+                model,
+                backend,
+                precision,
+                framework
+        );
         isInitialized = true;
         LogUtils.info("[ObjectDetectionManager] Object detection manager initialized.");
     }

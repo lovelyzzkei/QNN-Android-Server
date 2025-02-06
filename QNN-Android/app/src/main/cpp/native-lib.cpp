@@ -6,8 +6,9 @@
 #include <android/asset_manager_jni.h>
 
 #include "QnnManager.hpp"
-#include "DEManager.hpp"
-#include "ODManager.hpp"
+#include "IModel.hpp"
+#include "TaskType.hpp"
+#include "ModelFactory.hpp"
 
 #include "Log/Logger.hpp"
 
@@ -71,51 +72,52 @@ bool createDirectory(const std::string& path) {
 }
 
 
-ODManager* gODManager = nullptr;
-DEManager* gDEManager = nullptr;
+// Global pointer to the current model, or store in a manager, etc.
+static std::unique_ptr<IModel> gModel;
 
-
-extern "C"
-JNIEXPORT void JNICALL
-Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_initializeODManagerJNI(JNIEnv *env, jclass thiz,
-                                                         jstring jDevice, jstring jNativeLibPath,
-                                                         jstring jModel, jstring jBackend,
-                                                         jstring jPrecision, jstring jFramework) {
-    const char* device = env->GetStringUTFChars(jDevice, NULL);
-    const char* model = env->GetStringUTFChars(jModel, NULL);
-    const char* backend = env->GetStringUTFChars(jBackend, NULL);
-    const char* precision = env->GetStringUTFChars(jPrecision, NULL);
-    const char* framework = env->GetStringUTFChars(jFramework, NULL);
-    const char* nativeLibPath = env->GetStringUTFChars(jNativeLibPath, NULL);
-
-    // Set Adsp library path
-    if (!SetAdspLibraryPath(nativeLibPath)) {
-        LOGI("Failed to set ADSP Library Path\n");
-    }
-    gODManager = new ODManager(device, model, backend, precision, framework);
-}
 
 
 extern "C"
-JNIEXPORT void JNICALL
-Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_initializeDEManagerJNI(JNIEnv *env, jclass thiz,
-                                                                   jstring jDevice, jstring jNativeLibPath,
-                                                                   jstring jModel, jstring jBackend,
-                                                                   jstring jPrecision, jstring jFramework) {
-    const char* device = env->GetStringUTFChars(jDevice, NULL);
-    const char* model = env->GetStringUTFChars(jModel, NULL);
-    const char* backend = env->GetStringUTFChars(jBackend, NULL);
-    const char* precision = env->GetStringUTFChars(jPrecision, NULL);
-    const char* framework = env->GetStringUTFChars(jFramework, NULL);
-    const char* nativeLibPath = env->GetStringUTFChars(jNativeLibPath, NULL);
+JNIEXPORT jboolean JNICALL
+Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_initializeModelJNI(JNIEnv* env, jclass clazz,
+                                                                    jint jTaskType, // passed from Java
+                                                                    jstring jDevice, jstring jNativeLibDir,
+                                                                    jstring jModelFile, jstring jBackend,
+                                                                    jstring jPrecision, jstring jFramework) {
+    // TODO: implement initializeModelJNI()
+    const char* device   = env->GetStringUTFChars(jDevice, NULL);
+    const char* nativeLibDir   = env->GetStringUTFChars(jNativeLibDir, NULL);
+    const char* modelFile= env->GetStringUTFChars(jModelFile, NULL);
+    const char* backend  = env->GetStringUTFChars(jBackend, NULL);
+    const char* precision= env->GetStringUTFChars(jPrecision, NULL);
+    const char* framework= env->GetStringUTFChars(jFramework, NULL);
+
+    // Convert Java's jint taskType to our C++ enum
+    auto taskType = static_cast<TaskType>(jTaskType);
 
     // Set Adsp library path
-    if (!SetAdspLibraryPath(nativeLibPath)) {
+    if (!SetAdspLibraryPath(nativeLibDir)) {
         LOGI("Failed to set ADSP Library Path\n");
     }
-    gDEManager = new DEManager(device, model, backend, precision, framework);
-}
 
+    // Create the model
+    gModel = createModel(taskType);
+    if (!gModel) {
+        // Could not create a model
+        return JNI_FALSE;
+    }
+
+    bool success = gModel->initialize(device, modelFile, backend, precision, framework);
+
+    env->ReleaseStringUTFChars(jDevice, device);
+    env->ReleaseStringUTFChars(jModelFile, modelFile);
+    env->ReleaseStringUTFChars(jBackend, backend);
+    env->ReleaseStringUTFChars(jPrecision, precision);
+    env->ReleaseStringUTFChars(jFramework, framework);
+
+
+    return success ? JNI_TRUE : JNI_FALSE;
+}
 
 
 extern "C"
@@ -125,22 +127,26 @@ Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getObjectBoxesJNI(JNIEnv *env, 
                                                     jint height) {
     jbyte * pYUVFrameData = env->GetByteArrayElements(YUVFrameData, 0);
 
-    // Convert to OpenCV Mat, YUV -> RGB (Originally YUV_420_888)
-    cv::Mat myuv(height + height / 2, width, CV_8UC1, (unsigned char*)pYUVFrameData);
-    cv::Mat mrgb(height, width, CV_8UC3);
-    LOGD("mrgb size: %d x %d", mrgb.cols, mrgb.rows);
-    cv::cvtColor(myuv, mrgb, cv::COLOR_YUV2RGB_NV21, 3);
+    std::vector<Detection>* detectionResults;
 
+    logExecutionTime("Preprocess", [&]() {
+        gModel->preprocess((unsigned char*)pYUVFrameData, width, height);
+    });
+    logExecutionTime("Inference", [&]() {
+        gModel->inference();
+    });
+    logExecutionTime("Postprocess", [&]() {
+        detectionResults = (std::vector<Detection>*)gModel->postprocess();
+    });
 
-    std::vector<Detection> detectionResults = gODManager->doODInference(mrgb);
-
+    // Conversion to pass back to Java
     auto start = std::chrono::high_resolution_clock::now();
     jclass detectionClass = env->FindClass("com/lovelyzzkei/qnnSkeleton/tasks/ObjectDetectionManager$YoloDetection");
-    jobjectArray detectionArray = env->NewObjectArray(detectionResults.size(), detectionClass, nullptr);
+    jobjectArray detectionArray = env->NewObjectArray(detectionResults->size(), detectionClass, nullptr);
     jmethodID constructor = env->GetMethodID(detectionClass, "<init>", "(FFFFFLjava/lang/String;)V");
 
-    for (size_t i = 0; i < detectionResults.size(); ++i) {
-        const auto &det = detectionResults[i];
+    for (size_t i = 0; i < detectionResults->size(); ++i) {
+        const auto &det = detectionResults->at(i);
         jstring clsName = env->NewStringUTF(det.cls.c_str());
         jobject detectionObject = env->NewObject(
                 detectionClass, constructor,
@@ -161,20 +167,24 @@ Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getObjectBoxesJNI(JNIEnv *env, 
 
 extern "C"
 JNIEXPORT jfloatArray JNICALL
-Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getDepthMapJNI(JNIEnv *env, jobject thiz,
+Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getDepthMapJNI(JNIEnv *env, jclass clazz,
                                                           jbyteArray YUVFrameData, jint width,
                                                           jint height) {
     jbyte * pYUVFrameData = env->GetByteArrayElements(YUVFrameData, 0);
+    std::vector<float>* depthData;
+    logExecutionTime("Preprocess", [&]() {
+        gModel->preprocess((unsigned char*)pYUVFrameData, width, height);
+    });
+    logExecutionTime("Inference", [&]() {
+        gModel->inference();
+    });
+    logExecutionTime("Postprocess", [&]() {
+        depthData = (std::vector<float>*)gModel->postprocess();
+    });
 
-    // Convert to OpenCV Mat, YUV -> RGB (Originally YUV_420_888)
-    cv::Mat myuv(height + height / 2, width, CV_8UC1, (unsigned char*)pYUVFrameData);
-    cv::Mat mrgb(height, width, CV_8UC3);
-    cv::cvtColor(myuv, mrgb, cv::COLOR_YUV2RGB_NV21, 3);
-
-    auto depthData = gDEManager->doDEInference(mrgb);
-
-    jfloatArray depthDataArray = env->NewFloatArray(depthData.size());
-    env->SetFloatArrayRegion(depthDataArray, 0, depthData.size(), depthData.data());
+    jfloatArray depthDataArray = env->NewFloatArray(depthData->size());
+    env->SetFloatArrayRegion(depthDataArray, 0, depthData->size(), depthData->data());
     return depthDataArray;
 }
+
 

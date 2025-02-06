@@ -1,84 +1,26 @@
 //
-// Created by user on 2025-01-09.
+// Created by user on 2025-02-06.
 //
 
-#include <numeric>
-#include <string>
 #include <fstream>
 #include <sstream>
-#include <iostream>
-#include "ODManager.hpp"
-#include "../QnnTypeMacros.hpp"
-#include "../QnnManager.hpp"
+#include <numeric>
+
+#include "YoloModel.hpp"
+#include "QnnTypeMacros.hpp"
+#include "QnnManager.hpp"
 #include "Log/Logger.hpp"
 
 
-ODManager::ODManager() {
-
-}
-
-// TODO: Adaptive to yolo version
-ODManager::ODManager(const char* device,
-                     const char* model_, const char* backend_,
-                     const char* precision, const char* framework) {
+YoloModel::YoloModel() {
     loadClassNames();
-
-    std::string model = std::string(model_) + "_" + std::string(precision) + ".so";
-    qnnManager = new QnnManager(model.c_str(), backend_);
-
-    auto dim = getQnnTensorDimensions((*qnnManager->getGraphsInfo())[0].inputTensors);
-    width = dim[2];
-    height = dim[1];
-    LOGD("width: %d, height: %d, numClasses: %d", width, height, numObjects);
-    this->framework = framework;
-
-}
-
-ODManager::~ODManager() {
+    LOGD("[YoloModel] Load COCO class names");
 }
 
 
-
-
-
-void ODManager::preprocessImage(cv::Mat &mrgb) {
-    cv::resize(mrgb, mrgb, cv::Size(width, height), cv::INTER_CUBIC);
-    cv::cvtColor(mrgb, mrgb, CV_BGR2RGB);
-    mrgb.convertTo(mrgb, CV_32FC3, 1.0/255.0);
-
-    // Normalize the image -> mean and std are fit to NYU dataset. Need to change to use camera
-    cv::Scalar mean(NORM_MEAN[0], NORM_MEAN[1], NORM_MEAN[2]);
-    cv::Scalar std(NORM_STD[0], NORM_STD[1], NORM_STD[2]);
-
-    cv::subtract(mrgb, mean, mrgb);
-    cv::divide(mrgb, std, mrgb);
-}
-
-
-
-std::vector<Detection> ODManager::doODInference(cv::Mat &mrgb) {
-    std::vector<Detection> dets;
-
-    // Preprocess
-    logExecutionTime("Preprocess", [&]() {
-        preprocessImage(mrgb);
-    });
-
-    // QNN version of executing model
-    logExecutionTime("Inference", [&]() {
-        qnnManager->inferenceModel(reinterpret_cast<float32_t *>(mrgb.data));
-    });
-
-    logExecutionTime("Postprocess", [&]() {
-        dets = postprocessResultsQNN(qnnManager->m_inferData);
-    });
-
-    return dets;
-}
-
-
-std::vector<Detection> ODManager::postprocessResultsQNN(
-        std::vector<std::pair<std::vector<size_t>, float32_t*>> dets) {
+void* YoloModel::postprocess()
+{
+    auto dets = qnnManager->m_inferData;
 
     // Dim, Data pair -> Vector
     const float* boxesPtr = dets[0].second;     // (1, 6300, 4)
@@ -89,7 +31,6 @@ std::vector<Detection> ODManager::postprocessResultsQNN(
     int numBoxes = dets[0].first[1];
     int boxElements = dets[0].first[2]; // 4 (x1, y1, x2, y2)
 
-
     std::vector<std::vector<float>> boxes;
     {
         std::vector<float> flatBoxes(boxesPtr, boxesPtr + numBoxes * boxElements);
@@ -98,7 +39,6 @@ std::vector<Detection> ODManager::postprocessResultsQNN(
                                    flatBoxes.begin() + (i + 1) * boxElements);
             boxes.push_back(box);
         }
-
 //        for (int i = 0; i < 10; i++) {
 //            LOGD("QNN output[%d]: %f", i, flatBoxes[i]);
 //        }
@@ -112,15 +52,15 @@ std::vector<Detection> ODManager::postprocessResultsQNN(
     float iouThreshold = 0.4;
     auto finalDetections = filterHighConfBoxes(boxes, scores, classIdx, scoreThreshold, iouThreshold);
 
-    return finalDetections;
+    // Allocate a copy on the heap and Return it as a void pointer
+    auto* resultVector = new std::vector<Detection>(std::move(finalDetections));
+    return static_cast<void*>(resultVector);
 }
 
 
 
-
-
 // YOLO Post-processing
-std::vector<Detection> ODManager::filterHighConfBoxes(
+std::vector<Detection> YoloModel::filterHighConfBoxes(
         const std::vector<std::vector<float>>& boxes,       // (1, N_OBJS, 4)
         const std::vector<float>& scores,                   // (1, N_OBJS)
         const std::vector<float>& class_idx,                // (1, N_OBJS)
@@ -161,7 +101,7 @@ float computeIoU(const Detection& box1, const Detection& box2) {
 
 
 // Non-Maximum Suppression (NMS)
-std::vector<Detection> ODManager::nonMaximumSuppression(const std::vector<Detection>& detections, float iou_threshold) {
+std::vector<Detection> YoloModel::nonMaximumSuppression(const std::vector<Detection>& detections, float iou_threshold) {
     std::vector<Detection> result;
     std::vector<bool> suppressed(detections.size(), false);
 
@@ -186,7 +126,9 @@ std::vector<Detection> ODManager::nonMaximumSuppression(const std::vector<Detect
 }
 
 
-void ODManager::loadClassNames() {
+
+
+void YoloModel::loadClassNames() {
     const std::string& filePath = "/data/local/tmp/qnnSkeleton/coco_labels.txt";
     std::ifstream file(filePath);
 

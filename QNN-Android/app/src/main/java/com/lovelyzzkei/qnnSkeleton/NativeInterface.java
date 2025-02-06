@@ -11,14 +11,17 @@ public class NativeInterface {
     // ADSP / QNN library init
     public static native String setAdspLibraryPathJNI(String nativeLibDir);
 
-    // Manager initialization
-    public static native void initializeODManagerJNI(String device, String nativeLibDir,
-                                                     String model, String backend,
-                                                     String precision, String framework);
+    // Model initialization
+    public static native boolean initializeModelJNI(
+            int taskType,
+            String device,
+            String nativeLibDir,
+            String modelFile,
+            String backend,
+            String precision,
+            String framework
+    );
 
-    public static native void initializeDEManagerJNI(String device, String nativeLibDir,
-                                                     String model, String backend,
-                                                     String precision, String framework);
 
     // Object detection
     public static native YoloDetection[] getObjectBoxesJNI(byte[] cameraImageBuffer, int width, int height);
