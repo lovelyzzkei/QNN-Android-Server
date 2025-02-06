@@ -43,7 +43,10 @@ android {
 
 3. Add the models you want to the android project. You can refer the codes in `Server` folder to download model at the Qualcomm AI Hub and convert properly.
 
-4. **Write appropriate preprocessing/postprocessing code for the model. Currently, only pipeline for YOLOv6 model exists.**
+4. **Write appropriate preprocessing/postprocessing code for the model. Currently, only pipeline for YOLOv6 model exists.**. Also, current implementation gets the format as below. You have to adjust your model file name like this.
+```
+${MODEL_NAME}_${PRECISION}.so   # e.g., YOLOv6_FP16.so
+```
 
 
 
