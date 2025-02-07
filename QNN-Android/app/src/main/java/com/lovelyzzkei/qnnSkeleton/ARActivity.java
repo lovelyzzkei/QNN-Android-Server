@@ -593,7 +593,7 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
         // TODO: Adjust to model output
         int depthWidth = 322;
         int depthHeight = 238;
-        backgroundRenderer.updateCameraAriaDepthTexture(depthBuffer, depthWidth, depthHeight);
+        backgroundRenderer.updateCameraCustomDepthTexture(depthBuffer, depthWidth, depthHeight);
     }
 
 
@@ -641,7 +641,6 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
 
 
     /** Shows checkboxes to the user to facilitate toggling of depth-based effects. */
-    // TODO: ARIA Depth vs ARCore Depth
     private void launchDepthSettingsMenuDialog() {
         // Retrieves the current settings to show in the checkboxes.
         resetSettingsMenuDialogCheckboxes();

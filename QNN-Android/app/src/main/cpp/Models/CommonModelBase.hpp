@@ -31,11 +31,11 @@ public:
                     const std::string& framework) override
     {
         std::string model = std::string(modelName) + "_" + std::string(precision) + ".so";
-        LOGD("[YoloModel] Initializing with modelFile: %s", model.c_str());
+        LOGD("Initializing with modelFile: %s", model.c_str());
         qnnManager = new QnnManager(model.c_str(), backend.c_str());
 
         // ASSUME input tensor is NHWC!!
-        auto dim = getQnnTensorDimensions((*qnnManager->getGraphsInfo())[0].inputTensors);
+        auto dim = getQnnTensorDimensions((*qnnManager->getContextMgr()->getGraphsInfo())[0].inputTensors);
         width = dim[2];
         height = dim[1];
         LOGD("width: %d, height: %d", width, height);
@@ -70,8 +70,10 @@ public:
 
     // Provide a default inference that calls QNN
     virtual bool inference() override {
-        qnnManager->inferenceModel(
+        qnnManager->runInference(
                 reinterpret_cast<float32_t *>(this->preprocessedInput.data));
+//        qnnManager->inferenceModel(
+//                reinterpret_cast<float32_t *>(this->preprocessedInput.data));
         return true;
     }
 

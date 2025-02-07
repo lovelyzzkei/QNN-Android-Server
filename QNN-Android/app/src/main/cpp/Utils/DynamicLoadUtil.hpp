@@ -9,7 +9,7 @@
 #pragma once
 
 #include <string>
-#include "../QnnManager.hpp"
+#include "QnnTypeMacros.hpp"
 
 namespace qnn {
 namespace tools {

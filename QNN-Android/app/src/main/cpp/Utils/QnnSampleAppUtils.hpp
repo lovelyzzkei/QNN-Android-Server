@@ -18,13 +18,13 @@
 #include "System/QnnSystemContext.h"
 #include "../QnnWrapperUtils.hpp"
 #include "QnnLog.h"
+#include "QnnTypeMacros.hpp"
 
 
 namespace qnn {
 namespace tools {
 namespace sample_app {
 
-enum class ProfilingLevel { OFF, BASIC, DETAILED, INVALID };
 
 using ReadInputListRetType_t = std::
     tuple<std::vector<std::vector<std::string>>, std::unordered_map<std::string, uint32_t>, bool>;

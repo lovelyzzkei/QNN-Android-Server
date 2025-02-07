@@ -16,8 +16,47 @@
 #pragma once
 
 #include "QnnTypes.h"
+#include "QnnInterface.h"
+#include "QNN/System/QnnSystemInterface.h"
+#include "QnnWrapperUtils.hpp"
 
 #define QNN_OP_CFG_VALID(opConfig) ((opConfig).version == QNN_OPCONFIG_VERSION_1)
+
+enum class StatusCode {
+    SUCCESS,
+    FAILURE,
+    FAILURE_INPUT_LIST_EXHAUSTED,
+    FAILURE_SYSTEM_ERROR,
+    FAILURE_SYSTEM_COMMUNICATION_ERROR,
+    QNN_FEATURE_UNSUPPORTED
+};
+
+enum class ProfilingLevel { OFF, BASIC, DETAILED, INVALID };
+
+
+// Graph Related Function Handle Types
+typedef qnn_wrapper_api::ModelError_t (*ComposeGraphsFnHandleType_t)(
+        Qnn_BackendHandle_t,
+        QNN_INTERFACE_VER_TYPE,
+        Qnn_ContextHandle_t,
+        const qnn_wrapper_api::GraphConfigInfo_t **,
+        const uint32_t,
+        qnn_wrapper_api::GraphInfo_t ***,
+        uint32_t *,
+        bool
+//        QnnLog_Callback_t,
+//        QnnLog_Level_t
+);
+typedef qnn_wrapper_api::ModelError_t (*FreeGraphInfoFnHandleType_t)(
+        qnn_wrapper_api::GraphInfo_t ***, uint32_t);
+
+typedef struct QnnFunctionPointers {
+    ComposeGraphsFnHandleType_t composeGraphsFnHandle;
+    FreeGraphInfoFnHandleType_t freeGraphInfoFnHandle;
+    QNN_INTERFACE_VER_TYPE qnnInterface;
+    QNN_SYSTEM_INTERFACE_VER_TYPE qnnSystemInterface;
+} QnnFunctionPointers;
+
 
 inline Qnn_OpConfig_t createQnnOpConfig(const Qnn_OpConfigVersion_t version) {
     Qnn_OpConfig_t opConfig = QNN_OPCONFIG_INIT;

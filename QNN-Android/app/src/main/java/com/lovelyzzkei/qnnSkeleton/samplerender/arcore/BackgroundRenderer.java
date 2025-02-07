@@ -221,7 +221,7 @@ public class BackgroundRenderer {
     }
   }
 
-  public void updateCameraAriaDepthTexture(ByteBuffer depthBuffer, int width, int height) {
+  public void updateCameraCustomDepthTexture(ByteBuffer depthBuffer, int width, int height) {
     // SampleRender abstraction leaks here
     GLES30.glBindTexture(GLES30.GL_TEXTURE_2D, cameraDepthTexture.getTextureId());
     GLES30.glTexImage2D(

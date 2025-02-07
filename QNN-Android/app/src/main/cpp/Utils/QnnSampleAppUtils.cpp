@@ -149,7 +149,7 @@ std::string sample_app::sanitizeTensorName(std::string name) {
   return sanitizedName;
 }
 
-sample_app::ProfilingLevel sample_app::parseProfilingLevel(std::string profilingLevelString) {
+ProfilingLevel sample_app::parseProfilingLevel(std::string profilingLevelString) {
   std::transform(profilingLevelString.begin(),
                  profilingLevelString.end(),
                  profilingLevelString.begin(),
