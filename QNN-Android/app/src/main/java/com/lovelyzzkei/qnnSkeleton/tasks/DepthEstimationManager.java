@@ -11,6 +11,7 @@ import java.nio.ByteOrder;
 
 public class DepthEstimationManager implements BaseManager {
     private boolean isInitialized = false;
+    private double inferenceTime = 0;
     private final TaskType taskType = TaskType.DEPTH_ESTIMATION;
 
     public static class DepthResult implements InferenceResult {
@@ -57,9 +58,30 @@ public class DepthEstimationManager implements BaseManager {
             return new DepthResult(new float[0]);
         }
         // Actually run depth estimation
+        double startTime = System.nanoTime();
         float[] depthMap = NativeInterface.getDepthMapJNI(cameraImageData, width, height);
+        double endTime = System.nanoTime();
+        inferenceTime = (endTime - startTime) / 1e6; // ms
+        setInferenceTime(inferenceTime);
+
         return new DepthResult(depthMap);
     }
+
+    @Override
+    public void setPowerMode(int powerMode) {
+        NativeInterface.setPowerModeJNI(powerMode);
+    }
+
+    @Override
+    public void setInferenceTime(double inferenceTime) {
+        this.inferenceTime = inferenceTime;
+    }
+
+    @Override
+    public double getInferenceTime() {
+        return inferenceTime;
+    }
+
 
     /**
      * Optionally: convert the float[] to 16-bit buffer for GPU usage, etc.

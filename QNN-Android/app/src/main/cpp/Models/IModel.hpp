@@ -30,6 +30,11 @@ public:
                             const std::string& precision,
                             const std::string& framework) = 0;
 
+    /*
+     * Set NPU power mode
+     */
+    virtual void setPowerMode(int mode) = 0;
+
     /**
      * Preprocess input data (e.g., YUV->RGB, resize, normalize, etc.).
      *

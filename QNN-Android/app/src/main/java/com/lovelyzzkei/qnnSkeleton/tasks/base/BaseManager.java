@@ -26,5 +26,15 @@ public interface BaseManager {
      * Runs inference on YUV image data and returns an object representing results.
      * The result can be either bounding boxes, depth map, etc.
      */
-    InferenceResult runInference(byte[] cameraImageData, int width, int height);
+    InferenceResult runInference(byte[] cameraImageData,
+                                 int width,
+                                 int height);
+
+    /*
+    * Set power mode
+    */
+    void setPowerMode(int powerMode);
+
+    void setInferenceTime(double inferenceTime);
+    double getInferenceTime();
 }

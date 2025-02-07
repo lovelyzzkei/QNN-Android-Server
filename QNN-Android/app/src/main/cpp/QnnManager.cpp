@@ -75,6 +75,9 @@ StatusCode QnnManager::setup() {
 
 
 StatusCode QnnManager::runInference(float32_t* inputBuffer) {
+    // Set power configuration
+//    m_powerMgr->setPowerConfig(*m_loader);
+
     // Delegates the actual run to m_inferenceRunner
     auto status = m_inferenceRunner->execute(inputBuffer, *m_loader, *m_backendMgr);
     if (status != StatusCode::SUCCESS) {
@@ -82,6 +85,17 @@ StatusCode QnnManager::runInference(float32_t* inputBuffer) {
     }
     // Retrieve the outputs from the runner if needed
     m_inferData = m_inferenceRunner->getOutputs();
+    return status;
+}
+
+
+StatusCode QnnManager::setPowerMode(int powerMode) {
+    auto status = m_powerMgr->setPowerConfig(static_cast<PowerModeType>(powerMode), *m_loader);
+    if (status != StatusCode::SUCCESS) {
+        QNN_ERROR("Failed to set power mode");
+        return status;
+    }
+    QNN_INFO("Power mode set to %d", powerMode);
     return status;
 }
 

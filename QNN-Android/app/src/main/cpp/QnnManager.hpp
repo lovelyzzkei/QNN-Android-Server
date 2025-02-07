@@ -36,6 +36,8 @@ public:
     std::unique_ptr<QnnPowerManager> &getPowerMgr() { return m_powerMgr; }
     std::unique_ptr<QnnContextManager> &getContextMgr() { return m_contextMgr; }
 
+    StatusCode setPowerMode(int powerMode);
+
     StatusCode runInference(float32_t* inputBuffer);
     std::vector<std::pair<std::vector<size_t>, float32_t*>> m_inferData;
 

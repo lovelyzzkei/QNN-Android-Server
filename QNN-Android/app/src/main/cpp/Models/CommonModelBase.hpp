@@ -43,6 +43,10 @@ public:
         return true;
     }
 
+    virtual void setPowerMode(int powerMode) {
+        qnnManager->setPowerMode(powerMode);
+    }
+
     // Provide a default preprocess if most models do the same steps
     // (YUV->RGB, resize, etc.). Derived classes can override if needed.
     virtual bool preprocess(const uint8_t* pYUVFrameData, int iWidth, int iHeight) override {

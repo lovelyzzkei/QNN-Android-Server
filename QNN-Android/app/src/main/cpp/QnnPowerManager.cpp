@@ -12,8 +12,6 @@ StatusCode QnnPowerManager::setup(QnnLoader& loader) {
         QNN_ERROR("createPowerConfigId failed");
         return StatusCode::FAILURE;
     }
-    // Adapt to power configuration
-    this->setPowerConfig(loader);
 
     QNN_INFO("[QnnPowerManager] Power configuration success. PowerConfigId: %d", m_powerConfigId);
     return StatusCode::SUCCESS;
@@ -43,7 +41,7 @@ StatusCode QnnPowerManager::createPowerConfigId(QnnLoader& loader) {
 
 
 
-StatusCode QnnPowerManager::setPowerConfig(QnnLoader& loader) {
+StatusCode QnnPowerManager::setPowerConfig(PowerModeType powerMode, QnnLoader& loader) {
     QnnDevice_Infrastructure_t deviceInfra = nullptr;
     Qnn_ErrorHandle_t devErr = loader.getFunctionPointers()
             .qnnInterface.deviceGetInfrastructure(&deviceInfra);
@@ -54,12 +52,135 @@ StatusCode QnnPowerManager::setPowerConfig(QnnLoader& loader) {
     QnnHtpDevice_Infrastructure_t *htpInfra = static_cast<QnnHtpDevice_Infrastructure_t *>(deviceInfra);
     QnnHtpDevice_PerfInfrastructure_t perfInfra = htpInfra->perfInfra;
 
+    // Prepare a power configuration structure.
     QnnHtpPerfInfrastructure_PowerConfig_t powerConfig;
     memset(&powerConfig, 0, sizeof(powerConfig));
+
+    // Set common options
     powerConfig.option                     = QNN_HTP_PERF_INFRASTRUCTURE_POWER_CONFIGOPTION_DCVS_V3;
+    powerConfig.dcvsV3Config.contextId     = m_powerConfigId;  //use the power config id created
+    powerConfig.dcvsV3Config.setSleepDisable = 0;
+    powerConfig.dcvsV3Config.sleepDisable = 0;
+    powerConfig.dcvsV3Config.powerMode = QNN_HTP_PERF_INFRASTRUCTURE_POWERMODE_PERFORMANCE_MODE;
+
+    // Configure the parameters based on the user-selected power mode.
+    switch (powerMode) {
+        case PowerModeType::BURST:
+            powerConfig.dcvsV3Config.setSleepLatency = 1;
+            powerConfig.dcvsV3Config.sleepLatency = 40;  // 40 us
+            powerConfig.dcvsV3Config.dcvsEnable = 0;   // DCVS disabled
+            powerConfig.dcvsV3Config.setBusParams    = 1;
+            powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
+            powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
+            powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
+            powerConfig.dcvsV3Config.setSleepDisable = 1;
+            powerConfig.dcvsV3Config.coreVoltageCornerMin = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
+            powerConfig.dcvsV3Config.coreVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
+            powerConfig.dcvsV3Config.coreVoltageCornerMax = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
+            // Disable sleep (for burst mode, you may want to avoid sleep)
+            powerConfig.dcvsV3Config.sleepDisable = 1;
+            break;
+
+        case PowerModeType::SUSTAINED_HIGH_PERFORMANCE:
+        case PowerModeType::HIGH_PERFORMANCE:
+            powerConfig.dcvsV3Config.setSleepLatency = 1;
+            powerConfig.dcvsV3Config.sleepLatency = 100;  // 100 us
+            powerConfig.dcvsV3Config.dcvsEnable = 0;    // DCVS disabled
+            powerConfig.dcvsV3Config.setBusParams    = 1;
+            powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_TURBO;
+            powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_TURBO;
+            powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_TURBO;
+            powerConfig.dcvsV3Config.setSleepDisable = 1;
+            powerConfig.dcvsV3Config.coreVoltageCornerMin = DCVS_VOLTAGE_VCORNER_TURBO;
+            powerConfig.dcvsV3Config.coreVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_TURBO;
+            powerConfig.dcvsV3Config.coreVoltageCornerMax = DCVS_VOLTAGE_VCORNER_TURBO;
+            break;
+        case PowerModeType::BALANCED:
+            powerConfig.dcvsV3Config.setSleepLatency = 1;
+            powerConfig.dcvsV3Config.sleepLatency = 1000;  // 100 us
+            powerConfig.dcvsV3Config.dcvsEnable = 1;    // DCVS disabled
+            powerConfig.dcvsV3Config.setBusParams    = 1;
+            powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_NOM_PLUS;
+            powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_NOM_PLUS;
+            powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_NOM_PLUS;
+            powerConfig.dcvsV3Config.setSleepDisable = 1;
+            powerConfig.dcvsV3Config.coreVoltageCornerMin = DCVS_VOLTAGE_VCORNER_NOM_PLUS;
+            powerConfig.dcvsV3Config.coreVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_NOM_PLUS;
+            powerConfig.dcvsV3Config.coreVoltageCornerMax = DCVS_VOLTAGE_VCORNER_NOM_PLUS;
+            break;
+        case PowerModeType::LOW_BALANCED:
+            powerConfig.dcvsV3Config.setSleepLatency = 1;
+            powerConfig.dcvsV3Config.sleepLatency = 1000;
+            powerConfig.dcvsV3Config.dcvsEnable = 1;
+            powerConfig.dcvsV3Config.setBusParams    = 1;
+            powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_NOM;
+            powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_NOM;
+            powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_NOM;
+            powerConfig.dcvsV3Config.setSleepDisable = 1;
+            powerConfig.dcvsV3Config.coreVoltageCornerMin = DCVS_VOLTAGE_VCORNER_NOM;
+            powerConfig.dcvsV3Config.coreVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_NOM;
+            powerConfig.dcvsV3Config.coreVoltageCornerMax = DCVS_VOLTAGE_VCORNER_NOM;
+            break;
+        case PowerModeType::HIGH_POWER_SAVER:
+            powerConfig.dcvsV3Config.setSleepLatency = 1;
+            powerConfig.dcvsV3Config.sleepLatency = 1000;
+            powerConfig.dcvsV3Config.dcvsEnable = 1;
+            powerConfig.dcvsV3Config.setBusParams    = 1;
+            powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_SVS_PLUS;
+            powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_SVS_PLUS;
+            powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_SVS_PLUS;
+            powerConfig.dcvsV3Config.setSleepDisable = 1;
+            powerConfig.dcvsV3Config.coreVoltageCornerMin = DCVS_VOLTAGE_VCORNER_SVS_PLUS;
+            powerConfig.dcvsV3Config.coreVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_SVS_PLUS;
+            powerConfig.dcvsV3Config.coreVoltageCornerMax = DCVS_VOLTAGE_VCORNER_SVS_PLUS;
+            break;
+        case PowerModeType::POWER_SAVER:
+            powerConfig.dcvsV3Config.setSleepLatency = 1;
+            powerConfig.dcvsV3Config.sleepLatency = 1000;
+            powerConfig.dcvsV3Config.dcvsEnable = 1;
+            powerConfig.dcvsV3Config.setBusParams    = 1;
+            powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_SVS;
+            powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_SVS;
+            powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_SVS;
+            powerConfig.dcvsV3Config.setSleepDisable = 1;
+            powerConfig.dcvsV3Config.coreVoltageCornerMin = DCVS_VOLTAGE_VCORNER_SVS;
+            powerConfig.dcvsV3Config.coreVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_SVS;
+            powerConfig.dcvsV3Config.coreVoltageCornerMax = DCVS_VOLTAGE_VCORNER_SVS;
+            break;
+        case PowerModeType::LOW_POWER_SAVER:
+            powerConfig.dcvsV3Config.setSleepLatency = 1;
+            powerConfig.dcvsV3Config.sleepLatency = 1000;
+            powerConfig.dcvsV3Config.dcvsEnable = 1;
+            powerConfig.dcvsV3Config.setBusParams    = 1;
+            powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_SVS2;
+            powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_SVS2;
+            powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_SVS2;
+            powerConfig.dcvsV3Config.setSleepDisable = 1;
+            powerConfig.dcvsV3Config.coreVoltageCornerMin = DCVS_VOLTAGE_VCORNER_SVS2;
+            powerConfig.dcvsV3Config.coreVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_SVS2;
+            powerConfig.dcvsV3Config.coreVoltageCornerMax = DCVS_VOLTAGE_VCORNER_SVS2;
+            break;
+        case PowerModeType::EXTREME_POWER_SAVER:
+            powerConfig.dcvsV3Config.setSleepLatency = 1;
+            powerConfig.dcvsV3Config.sleepLatency = 1000;
+            powerConfig.dcvsV3Config.dcvsEnable = 1;
+            powerConfig.dcvsV3Config.setBusParams    = 1;
+            powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_CORNER_DISABLE;
+            powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_CORNER_DISABLE;
+            powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_CORNER_DISABLE;
+            powerConfig.dcvsV3Config.setSleepDisable = 1;
+            powerConfig.dcvsV3Config.coreVoltageCornerMin = DCVS_VOLTAGE_CORNER_DISABLE;
+            powerConfig.dcvsV3Config.coreVoltageCornerTarget = DCVS_VOLTAGE_CORNER_DISABLE;
+            powerConfig.dcvsV3Config.coreVoltageCornerMax = DCVS_VOLTAGE_CORNER_DISABLE;
+            break;
+        default:
+            QNN_ERROR("Unsupported power mode");
+            return StatusCode::FAILURE;
+    }
+
+
     powerConfig.dcvsV3Config.dcvsEnable    = 0; //1- To enable Dcvs and consider dcvs power mode, 0- To disable dcvs
     powerConfig.dcvsV3Config.setDcvsEnable = 1;
-    powerConfig.dcvsV3Config.contextId     = m_powerConfigId;  //use the power config id created
 
     // refer QnnHtpPerfInfrastructure.h
     powerConfig.dcvsV3Config.powerMode       = QNN_HTP_PERF_INFRASTRUCTURE_POWERMODE_PERFORMANCE_MODE;

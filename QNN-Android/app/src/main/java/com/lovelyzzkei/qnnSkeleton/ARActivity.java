@@ -4,25 +4,24 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.media.Image;
-import android.opengl.GLES20;
 import android.opengl.GLES30;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.Switch;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.lovelyzzkei.qnnSkeleton.common.LogUtils;
 import com.lovelyzzkei.qnnSkeleton.common.helpers.CameraPermissionHelper;
 import com.lovelyzzkei.qnnSkeleton.common.helpers.DepthSettings;
 import com.lovelyzzkei.qnnSkeleton.common.helpers.InstantPlacementSettings;
@@ -37,15 +36,11 @@ import com.lovelyzzkei.qnnSkeleton.common.helpers.DisplayRotationHelper;
 import com.lovelyzzkei.qnnSkeleton.common.helpers.SnackbarHelper;
 
 import com.lovelyzzkei.qnnSkeleton.samplerender.arcore.SpecularCubemapFilter;
-import com.google.ar.core.Anchor;
 import com.google.ar.core.ArCoreApk;
 import com.google.ar.core.Camera;
-import com.google.ar.core.CameraIntrinsics;
 import com.google.ar.core.Config;
 import com.google.ar.core.Frame;
-import com.google.ar.core.InstantPlacementPoint;
 import com.google.ar.core.LightEstimate;
-import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
 import com.google.ar.core.TrackingState;
 import com.google.ar.core.exceptions.CameraNotAvailableException;
@@ -66,14 +61,8 @@ import com.lovelyzzkei.qnnSkeleton.tasks.base.TaskType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.ShortBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 
 
 public class ARActivity extends AppCompatActivity implements SampleRender.Renderer{
@@ -101,6 +90,7 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
     private Session session;
     private GLSurfaceView surfaceView;
     private DetectionOverlayView detectionOverlayView;
+    private TextView latencyView;
     private TapHelper tapHelper;
     private SampleRender render;
 
@@ -144,6 +134,20 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
     private boolean turnOnInference = false;
     private boolean isInitialized = false;
 
+    public static final String[] POWER_OPTIONS = {
+        "BURST",
+        "SUSTAINED_HIGH_PERFORMANCE",
+        "HIGH_PERFORMANCE",
+        "BALANCED",
+        "LOW_BALANCED",
+        "HIGH_POWER_SAVER",
+        "POWER_SAVER",
+        "LOW_POWER_SAVER",
+        "EXTREME_POWER_SAVER"
+    };
+    private int currentPowerModeIndex = 0; // default to "Burst", i.e., index 0
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -154,6 +158,7 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
         hideSystemUI();
         FrameLayout loadingOverlay = findViewById(R.id.loadingOverlay);
         detectionOverlayView = findViewById(R.id.detectionOverlay);
+        latencyView = findViewById(R.id.latency);
 
         loadingOverlay.bringToFront();
 
@@ -184,6 +189,16 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
                 manager.initialize(device, nativeLibDir, selectedModel, selectedBackend, selectedPrecision, selectedFramework);
 
                 isInitialized = true;
+
+                ImageButton settingsButton = findViewById(R.id.settings_button);
+                settingsButton.setOnClickListener(
+                        v -> {
+                            PopupMenu popup = new PopupMenu(ARActivity.this, v);
+                            popup.setOnMenuItemClickListener(ARActivity.this::settingsMenuClick);
+                            popup.inflate(R.menu.settings_menu);
+                            popup.show();
+                        }
+                );
             }
             finally {
                 runOnUiThread(() -> loadingOverlay.setVisibility(View.GONE));
@@ -447,6 +462,8 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
                 byte[] cameraImageData = convertImage2YUVBuffer(cameraImage);
                 int width = cameraImage.getWidth();
                 int height = cameraImage.getHeight();
+
+                manager.setPowerMode(currentPowerModeIndex);
                 InferenceResult result = manager.runInference(cameraImageData, width, height);
 
                 if (result instanceof ObjectDetectionManager.DetectionResult) {
@@ -459,6 +476,7 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
                     float[] depthMap = depthResult.depthMap;
                     renderDepthMap(depthMap);
                 }
+                updateLatency(manager.getInferenceTime());
 
             }
         }
@@ -639,6 +657,16 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
         depthSettingsMenuDialogCheckboxes[2] = depthSettings.odEnabled();
     }
 
+    private void updateLatency(final double latency) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // Format the text with the measured latency in milliseconds.
+                latencyView.setText("Inference time: " + latency + " ms");
+            }
+        });
+    }
+
 
     /** Shows checkboxes to the user to facilitate toggling of depth-based effects. */
     private void launchDepthSettingsMenuDialog() {
@@ -674,10 +702,33 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
         }
     }
 
+    private void showPowerConfigDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Select Power Mode")
+                .setSingleChoiceItems(POWER_OPTIONS, currentPowerModeIndex,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                currentPowerModeIndex = which; // update selected index
+                            }
+                        })
+                .setPositiveButton("Apply", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Toast.makeText(getApplicationContext(), "Power mode updated to: " +
+                                        POWER_OPTIONS[currentPowerModeIndex],
+                                Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
     /** Menu button to launch feature specific settings. */
     protected boolean settingsMenuClick(MenuItem item) {
         if (item.getItemId() == R.id.settings) {
-            launchDepthSettingsMenuDialog();
+            showPowerConfigDialog();
             return true;
         }
         return false;

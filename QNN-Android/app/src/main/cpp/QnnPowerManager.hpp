@@ -7,13 +7,26 @@
 
 #include "QnnLoader.hpp"
 
+enum class PowerModeType {
+    BURST,
+    SUSTAINED_HIGH_PERFORMANCE,
+    HIGH_PERFORMANCE,
+    BALANCED,
+    LOW_BALANCED,
+    HIGH_POWER_SAVER,
+    POWER_SAVER,
+    LOW_POWER_SAVER,
+    EXTREME_POWER_SAVER
+};
+
+
 class QnnPowerManager {
 public:
     QnnPowerManager() = default;
 
     StatusCode setup(QnnLoader& loader);
     StatusCode createPowerConfigId(QnnLoader& loader);
-    StatusCode setPowerConfig(QnnLoader& loader);
+    StatusCode setPowerConfig(PowerModeType powerMode, QnnLoader& loader);
     StatusCode setRpcLatencyAndPolling();
 
 

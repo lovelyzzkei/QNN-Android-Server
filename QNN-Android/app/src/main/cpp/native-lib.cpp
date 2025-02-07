@@ -121,6 +121,14 @@ Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_initializeModelJNI(JNIEnv* env,
 
 
 extern "C"
+JNIEXPORT void JNICALL
+Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_setPowerModeJNI(JNIEnv *env, jclass clazz,
+                                                                 jint powerMode) {
+    gModel->setPowerMode(powerMode);
+}
+
+
+extern "C"
 JNIEXPORT jobjectArray JNICALL
 Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getObjectBoxesJNI(JNIEnv *env, jclass thiz,
                                                     jbyteArray YUVFrameData, jint width,
@@ -186,5 +194,6 @@ Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getDepthMapJNI(JNIEnv *env, jcl
     env->SetFloatArrayRegion(depthDataArray, 0, depthData->size(), depthData->data());
     return depthDataArray;
 }
+
 
 

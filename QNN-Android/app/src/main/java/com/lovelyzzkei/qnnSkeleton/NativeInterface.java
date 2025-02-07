@@ -22,6 +22,9 @@ public class NativeInterface {
             String framework
     );
 
+    // Power mode
+    public static native void setPowerModeJNI(int powerMode);
+
 
     // Object detection
     public static native YoloDetection[] getObjectBoxesJNI(byte[] cameraImageBuffer, int width, int height);

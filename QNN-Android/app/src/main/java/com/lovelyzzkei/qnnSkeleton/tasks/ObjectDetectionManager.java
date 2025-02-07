@@ -33,6 +33,7 @@ public class ObjectDetectionManager implements BaseManager {
     }
 
     private boolean isInitialized = false;
+    private double inferenceTime = 0;
 
     @Override
     public void initialize(String device, String nativeLibDir,
@@ -62,6 +63,17 @@ public class ObjectDetectionManager implements BaseManager {
         return taskType;
     }
 
+    @Override
+    public void setInferenceTime(double inferenceTime) {
+        this.inferenceTime = inferenceTime;
+    }
+
+    @Override
+    public double getInferenceTime() {
+        return inferenceTime;
+    }
+
+
     /**
      * Runs the object detection model on YUV image data and returns YoloDetection results.
      */
@@ -72,8 +84,20 @@ public class ObjectDetectionManager implements BaseManager {
             return new DetectionResult(new YoloDetection[0]);
         }
         // Actually run detection
+        double startTime = System.nanoTime();
         YoloDetection[] boxes = NativeInterface.getObjectBoxesJNI(cameraImageData, width, height);
+        double endTime = System.nanoTime();
+        inferenceTime = (endTime - startTime) / 1e6; // ms
+        setInferenceTime(inferenceTime);
+
         return new DetectionResult(boxes); // specialized result
     }
+
+    @Override
+    public void setPowerMode(int powerMode) {
+        NativeInterface.setPowerModeJNI(powerMode);
+    }
+
+
 
 }
