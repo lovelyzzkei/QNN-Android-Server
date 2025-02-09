@@ -662,7 +662,7 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
             @Override
             public void run() {
                 // Format the text with the measured latency in milliseconds.
-                latencyView.setText("Inference time: " + latency + " ms");
+                latencyView.setText("Inference time: " + latency + " ms\n Power mode: " + POWER_OPTIONS[currentPowerModeIndex]);
             }
         });
     }

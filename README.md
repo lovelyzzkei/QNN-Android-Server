@@ -11,6 +11,21 @@ The Goal of this project is to provide guidelines and a sample Android app to us
 I tested QNN-Android at the setting below.  
 - Android Studio 24.02 Ladybug Feature Drop
 
+## Supported tasks
+Currently, I implemented few tasks based on this code.
+- Object detection: [YOLOv6](https://github.com/meituan/YOLOv6)
+- Depth estimation: [Depth-Anything-V2](https://github.com/DepthAnything/Depth-Anything-V2)
+
+## Supported control knobs
+### 1. Power configs
+QNN supports to control power config, i.e., performance of NPU by using [QNN HTP Performance Infrastructure API](https://docs.qualcomm.com/bundle/publicresource/topics/80-63442-50/htp_backend.html#qnn-htp-performance-infrastructure-api). This code has setting menu to switch power mode.
+
+<table>
+  <tr>
+    <td><img src="./res/power_mode_1.png" alt="power_mode_1"></td>
+    <td><img src="./res/power_mode_2.png" alt="power_mode_2"></td>
+  </tr>
+</table>
 
 ## Prerequiste
 - Qualcomm® AI Engine Direct setup should be completed by following the guide [here](https://docs.qualcomm.com/bundle/publicresource/topics/80-63442-50/setup.html).
@@ -53,6 +68,7 @@ ${MODEL_NAME}_${PRECISION}.so   # e.g., YOLOv6_FP16.so
 ## Source Overview
 ### Source Organization
 - `QNN-Android`: Simple android demo app code to run QNN model. It's kind of skeleton code.
+    - `QNN-Android/app/src/main/java/../tasks/` & `QNN-Android/app/src/main/cpp/Models/`: Model codes that have preprocessing, inference and postprocessing. You can build your own model in here.
     - `QNN-Android/app/src/main/cpp/QnnManager.cpp`: Manager code that has all codes(Initializing to Running) related to QNN model running.
 - `Server`: Simple model conversion guidelines using Qualcomm AI Hub.
 

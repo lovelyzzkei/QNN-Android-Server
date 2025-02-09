@@ -59,9 +59,11 @@ StatusCode QnnPowerManager::setPowerConfig(PowerModeType powerMode, QnnLoader& l
     // Set common options
     powerConfig.option                     = QNN_HTP_PERF_INFRASTRUCTURE_POWER_CONFIGOPTION_DCVS_V3;
     powerConfig.dcvsV3Config.contextId     = m_powerConfigId;  //use the power config id created
-    powerConfig.dcvsV3Config.setSleepDisable = 0;
-    powerConfig.dcvsV3Config.sleepDisable = 0;
+    powerConfig.dcvsV3Config.sleepDisable    = 1; //True to disable sleep, False to re-enable sleep
+    powerConfig.dcvsV3Config.setSleepDisable = 1; //True to consider sleep disable/enable parameter otherwise False
     powerConfig.dcvsV3Config.powerMode = QNN_HTP_PERF_INFRASTRUCTURE_POWERMODE_PERFORMANCE_MODE;
+    powerConfig.dcvsV3Config.setBusParams = 1;
+    powerConfig.dcvsV3Config.setCoreParams   = 1;
 
     // Configure the parameters based on the user-selected power mode.
     switch (powerMode) {
@@ -69,7 +71,7 @@ StatusCode QnnPowerManager::setPowerConfig(PowerModeType powerMode, QnnLoader& l
             powerConfig.dcvsV3Config.setSleepLatency = 1;
             powerConfig.dcvsV3Config.sleepLatency = 40;  // 40 us
             powerConfig.dcvsV3Config.dcvsEnable = 0;   // DCVS disabled
-            powerConfig.dcvsV3Config.setBusParams    = 1;
+            powerConfig.dcvsV3Config.setDcvsEnable = 1;
             powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
             powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
             powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
@@ -78,7 +80,6 @@ StatusCode QnnPowerManager::setPowerConfig(PowerModeType powerMode, QnnLoader& l
             powerConfig.dcvsV3Config.coreVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
             powerConfig.dcvsV3Config.coreVoltageCornerMax = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
             // Disable sleep (for burst mode, you may want to avoid sleep)
-            powerConfig.dcvsV3Config.sleepDisable = 1;
             break;
 
         case PowerModeType::SUSTAINED_HIGH_PERFORMANCE:
@@ -86,7 +87,6 @@ StatusCode QnnPowerManager::setPowerConfig(PowerModeType powerMode, QnnLoader& l
             powerConfig.dcvsV3Config.setSleepLatency = 1;
             powerConfig.dcvsV3Config.sleepLatency = 100;  // 100 us
             powerConfig.dcvsV3Config.dcvsEnable = 0;    // DCVS disabled
-            powerConfig.dcvsV3Config.setBusParams    = 1;
             powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_TURBO;
             powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_TURBO;
             powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_TURBO;
@@ -99,7 +99,6 @@ StatusCode QnnPowerManager::setPowerConfig(PowerModeType powerMode, QnnLoader& l
             powerConfig.dcvsV3Config.setSleepLatency = 1;
             powerConfig.dcvsV3Config.sleepLatency = 1000;  // 100 us
             powerConfig.dcvsV3Config.dcvsEnable = 1;    // DCVS disabled
-            powerConfig.dcvsV3Config.setBusParams    = 1;
             powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_NOM_PLUS;
             powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_NOM_PLUS;
             powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_NOM_PLUS;
@@ -112,7 +111,6 @@ StatusCode QnnPowerManager::setPowerConfig(PowerModeType powerMode, QnnLoader& l
             powerConfig.dcvsV3Config.setSleepLatency = 1;
             powerConfig.dcvsV3Config.sleepLatency = 1000;
             powerConfig.dcvsV3Config.dcvsEnable = 1;
-            powerConfig.dcvsV3Config.setBusParams    = 1;
             powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_NOM;
             powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_NOM;
             powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_NOM;
@@ -125,7 +123,6 @@ StatusCode QnnPowerManager::setPowerConfig(PowerModeType powerMode, QnnLoader& l
             powerConfig.dcvsV3Config.setSleepLatency = 1;
             powerConfig.dcvsV3Config.sleepLatency = 1000;
             powerConfig.dcvsV3Config.dcvsEnable = 1;
-            powerConfig.dcvsV3Config.setBusParams    = 1;
             powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_SVS_PLUS;
             powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_SVS_PLUS;
             powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_SVS_PLUS;
@@ -138,7 +135,6 @@ StatusCode QnnPowerManager::setPowerConfig(PowerModeType powerMode, QnnLoader& l
             powerConfig.dcvsV3Config.setSleepLatency = 1;
             powerConfig.dcvsV3Config.sleepLatency = 1000;
             powerConfig.dcvsV3Config.dcvsEnable = 1;
-            powerConfig.dcvsV3Config.setBusParams    = 1;
             powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_SVS;
             powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_SVS;
             powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_SVS;
@@ -151,7 +147,6 @@ StatusCode QnnPowerManager::setPowerConfig(PowerModeType powerMode, QnnLoader& l
             powerConfig.dcvsV3Config.setSleepLatency = 1;
             powerConfig.dcvsV3Config.sleepLatency = 1000;
             powerConfig.dcvsV3Config.dcvsEnable = 1;
-            powerConfig.dcvsV3Config.setBusParams    = 1;
             powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_VCORNER_SVS2;
             powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_SVS2;
             powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_VCORNER_SVS2;
@@ -164,7 +159,6 @@ StatusCode QnnPowerManager::setPowerConfig(PowerModeType powerMode, QnnLoader& l
             powerConfig.dcvsV3Config.setSleepLatency = 1;
             powerConfig.dcvsV3Config.sleepLatency = 1000;
             powerConfig.dcvsV3Config.dcvsEnable = 1;
-            powerConfig.dcvsV3Config.setBusParams    = 1;
             powerConfig.dcvsV3Config.busVoltageCornerMin = DCVS_VOLTAGE_CORNER_DISABLE;
             powerConfig.dcvsV3Config.busVoltageCornerTarget = DCVS_VOLTAGE_CORNER_DISABLE;
             powerConfig.dcvsV3Config.busVoltageCornerMax = DCVS_VOLTAGE_CORNER_DISABLE;
@@ -177,31 +171,6 @@ StatusCode QnnPowerManager::setPowerConfig(PowerModeType powerMode, QnnLoader& l
             QNN_ERROR("Unsupported power mode");
             return StatusCode::FAILURE;
     }
-
-
-    powerConfig.dcvsV3Config.dcvsEnable    = 0; //1- To enable Dcvs and consider dcvs power mode, 0- To disable dcvs
-    powerConfig.dcvsV3Config.setDcvsEnable = 1;
-
-    // refer QnnHtpPerfInfrastructure.h
-    powerConfig.dcvsV3Config.powerMode       = QNN_HTP_PERF_INFRASTRUCTURE_POWERMODE_PERFORMANCE_MODE;
-    powerConfig.dcvsV3Config.setSleepLatency = 1; //True to consider Latency parameter otherwise False
-    powerConfig.dcvsV3Config.setBusParams    = 1; //True to consider Bus parameter otherwise False
-    powerConfig.dcvsV3Config.setCoreParams   = 1; //True to consider Core parameter otherwise False
-    powerConfig.dcvsV3Config.sleepDisable    = 1; //True to disable sleep, False to re-enable sleep
-    powerConfig.dcvsV3Config.setSleepDisable = 1; //True to consider sleep disable/enable parameter otherwise False
-
-    //Set Sleep latency parameter
-    powerConfig.dcvsV3Config.sleepLatency    =  40; // set dsp sleep latency ranges 10-65535 micro sec, refer hexagon sdk
-
-    //set Bus Clock Parameters (refer QnnHtpPerfInfrastructure.h)
-    powerConfig.dcvsV3Config.busVoltageCornerMin     = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
-    powerConfig.dcvsV3Config.busVoltageCornerTarget  = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
-    powerConfig.dcvsV3Config.busVoltageCornerMax     = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
-
-    //set Core Clock Parameters (refer QnnHtpPerfInfrastructure.h)
-    powerConfig.dcvsV3Config.coreVoltageCornerMin    = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
-    powerConfig.dcvsV3Config.coreVoltageCornerTarget = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
-    powerConfig.dcvsV3Config.coreVoltageCornerMax    = DCVS_VOLTAGE_VCORNER_MAX_VOLTAGE_CORNER;
 
     // Set power config with different performance parameters
     const QnnHtpPerfInfrastructure_PowerConfig_t *powerConfigs[] = {&powerConfig, NULL};
