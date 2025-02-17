@@ -31,7 +31,7 @@ enum class StatusCode {
     QNN_FEATURE_UNSUPPORTED
 };
 
-enum class ProfilingLevel { OFF, BASIC, DETAILED, INVALID };
+enum class ProfilingLevel { OFF, BASIC, DETAILED, LINTING, INVALID };
 
 
 // Graph Related Function Handle Types
@@ -56,6 +56,13 @@ typedef struct QnnFunctionPointers {
     QNN_INTERFACE_VER_TYPE qnnInterface;
     QNN_SYSTEM_INTERFACE_VER_TYPE qnnSystemInterface;
 } QnnFunctionPointers;
+
+
+typedef struct QnnModelFunctionPointers {
+    ComposeGraphsFnHandleType_t composeGraphsFnHandle;
+    FreeGraphInfoFnHandleType_t freeGraphInfoFnHandle;
+} QnnModelFunctionPointers;
+
 
 
 inline Qnn_OpConfig_t createQnnOpConfig(const Qnn_OpConfigVersion_t version) {

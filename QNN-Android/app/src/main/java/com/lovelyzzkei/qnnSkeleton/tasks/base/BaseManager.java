@@ -9,7 +9,9 @@ public interface BaseManager {
                     String model,
                     String backend,
                     String precision,
-                    String framework);
+                    String framework,
+                    int vtcmSize,
+                    int offset);
 
     /**
      * Returns true if everything is loaded and ready to run.

@@ -147,7 +147,7 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
     };
     private int currentPowerModeIndex = 0; // default to "Burst", i.e., index 0
 
-
+    private int frameIdx = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -185,8 +185,16 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
                 String nativeLibDir = this.getApplicationInfo().nativeLibraryDir;
 
                 // Create the manager for the chosen task
+                int vtcmSizeInMB = 8;
                 manager = TaskManagerFactory.createManager(selectedTask);
-                manager.initialize(device, nativeLibDir, selectedModel, selectedBackend, selectedPrecision, selectedFramework);
+                manager.initialize(device,
+                        nativeLibDir,
+                        selectedModel,
+                        selectedBackend,
+                        selectedPrecision,
+                        selectedFramework,
+                        vtcmSizeInMB,
+                        0);
 
                 isInitialized = true;
 
@@ -476,7 +484,15 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
                     float[] depthMap = depthResult.depthMap;
                     renderDepthMap(depthMap);
                 }
+
+
+
                 updateLatency(manager.getInferenceTime());
+
+                frameIdx++;
+                if (frameIdx == 100) {
+                    finish();
+                }
 
             }
         }

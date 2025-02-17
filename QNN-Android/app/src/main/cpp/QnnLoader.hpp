@@ -7,6 +7,7 @@
 
 
 #pragma once
+#include <vector>
 #include <string>
 #include "QnnTypeMacros.hpp"
 #include "Utils/DynamicLoadUtil.hpp"
@@ -14,13 +15,13 @@
 class QnnLoader {
 public:
     QnnLoader(const std::string& modelPath, const std::string& backendName);
+//    QnnLoader(const std::vector<std::string>& modelPaths, const std::string& backendName);
     ~QnnLoader();
 
     StatusCode initializeQnnFunctionPointers();
 
     // Getters for loaded handles or function pointers
     QnnFunctionPointers& getFunctionPointers() { return m_qnnFunctionPointers; }
-    const std::string& getModelFile() const { return m_modelPath; }
 
     void* getBackendHandle() const { return m_backendHandle; }
     void* getModelHandle() const { return m_modelHandle; }
@@ -34,8 +35,8 @@ public:
 
 
 private:
-    std::string m_modelPath;
     std::string m_backendName;
+    std::string m_modelPath;
 
     void* m_backendHandle = nullptr;
     void* m_modelHandle   = nullptr;

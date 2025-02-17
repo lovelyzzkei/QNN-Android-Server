@@ -38,7 +38,7 @@ public class ObjectDetectionManager implements BaseManager {
     @Override
     public void initialize(String device, String nativeLibDir,
                            String model, String backend,
-                           String precision, String framework) {
+                           String precision, String framework, int vtcmSize, int offset) {
 //        NativeInterface.initializeODManagerJNI(device, nativeLibDir, model, backend, precision, framework);
         NativeInterface.initializeModelJNI(
                 taskType.ordinal(),
@@ -47,7 +47,9 @@ public class ObjectDetectionManager implements BaseManager {
                 model,
                 backend,
                 precision,
-                framework
+                framework,
+                vtcmSize,
+                offset
         );
         isInitialized = true;
         LogUtils.info("[ObjectDetectionManager] Object detection manager initialized.");

@@ -83,7 +83,8 @@ Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_initializeModelJNI(JNIEnv* env,
                                                                     jint jTaskType, // passed from Java
                                                                     jstring jDevice, jstring jNativeLibDir,
                                                                     jstring jModelFile, jstring jBackend,
-                                                                    jstring jPrecision, jstring jFramework) {
+                                                                    jstring jPrecision, jstring jFramework,
+                                                                    jint vtcmSize, jint offset) {
     // TODO: implement initializeModelJNI()
     const char* device   = env->GetStringUTFChars(jDevice, NULL);
     const char* nativeLibDir   = env->GetStringUTFChars(jNativeLibDir, NULL);
@@ -107,7 +108,13 @@ Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_initializeModelJNI(JNIEnv* env,
         return JNI_FALSE;
     }
 
-    bool success = gModel->initialize(device, modelFile, backend, precision, framework);
+    bool success = gModel->initialize(device,
+                                      modelFile,
+                                      backend,
+                                      precision,
+                                      framework,
+                                      vtcmSize,
+                                      offset);
 
     env->ReleaseStringUTFChars(jDevice, device);
     env->ReleaseStringUTFChars(jModelFile, modelFile);
@@ -118,6 +125,7 @@ Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_initializeModelJNI(JNIEnv* env,
 
     return success ? JNI_TRUE : JNI_FALSE;
 }
+
 
 
 extern "C"
@@ -135,17 +143,23 @@ Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getObjectBoxesJNI(JNIEnv *env, 
                                                     jint height) {
     jbyte * pYUVFrameData = env->GetByteArrayElements(YUVFrameData, 0);
 
+    bool modelFromMultiTaskMgr = false;
+    std::unique_ptr<IModel> lModel = nullptr;
     std::vector<Detection>* detectionResults;
 
+    lModel = std::move(gModel);
+
     logExecutionTime("Preprocess", [&]() {
-        gModel->preprocess((unsigned char*)pYUVFrameData, width, height);
+        lModel->preprocess((unsigned char*)pYUVFrameData, width, height);
     });
     logExecutionTime("Inference", [&]() {
-        gModel->inference();
+        lModel->inference();
     });
     logExecutionTime("Postprocess", [&]() {
-        detectionResults = (std::vector<Detection>*)gModel->postprocess();
+        detectionResults = (std::vector<Detection>*)lModel->postprocess();
     });
+    gModel = std::move(lModel);
+
 
     // Conversion to pass back to Java
     auto start = std::chrono::high_resolution_clock::now();
@@ -178,22 +192,27 @@ JNIEXPORT jfloatArray JNICALL
 Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getDepthMapJNI(JNIEnv *env, jclass clazz,
                                                           jbyteArray YUVFrameData, jint width,
                                                           jint height) {
-    jbyte * pYUVFrameData = env->GetByteArrayElements(YUVFrameData, 0);
+    jbyte *pYUVFrameData = env->GetByteArrayElements(YUVFrameData, 0);
+
+    bool modelFromMultiTaskMgr = false;
+    std::unique_ptr<IModel> lModel = nullptr;
     std::vector<float>* depthData;
+    lModel = std::move(gModel);
+
+
     logExecutionTime("Preprocess", [&]() {
-        gModel->preprocess((unsigned char*)pYUVFrameData, width, height);
+        lModel->preprocess((unsigned char*)pYUVFrameData, width, height);
     });
     logExecutionTime("Inference", [&]() {
-        gModel->inference();
+        lModel->inference();
     });
     logExecutionTime("Postprocess", [&]() {
-        depthData = (std::vector<float>*)gModel->postprocess();
+        depthData = (std::vector<float>*)lModel->postprocess();
     });
+    gModel = std::move(lModel);
+
 
     jfloatArray depthDataArray = env->NewFloatArray(depthData->size());
     env->SetFloatArrayRegion(depthDataArray, 0, depthData->size(), depthData->data());
     return depthDataArray;
 }
-
-
-

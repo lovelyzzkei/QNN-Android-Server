@@ -2,9 +2,13 @@
 // Created by user on 2025-02-06.
 //
 
+#include <fstream>
+
 #include "QnnBackendManager.hpp"
 #include "Log/Logger.hpp"
 #include "HTP/QnnHtpDevice.h"
+#include "DSP/QnnDspProfile.h"
+#include "HTP/QnnHtpProfile.h"
 
 using namespace qnn;
 using namespace qnn::tools;
@@ -97,6 +101,15 @@ StatusCode QnnBackendManager::initializeProfiling(QnnLoader& loader) {
                 QNN_ERROR("Unable to create profile handle in the backend.");
                 return StatusCode::FAILURE;
             }
+        } else if (ProfilingLevel::LINTING == m_profilingLevel) {
+            QNN_INFO("HTP Linting profiling requested. Creating Qnn Profile object.");
+            if (QNN_PROFILE_NO_ERROR != loader.getFunctionPointers().qnnInterface.profileCreate(
+                    m_backendHandle,
+                    QNN_HTP_PROFILE_LEVEL_LINTING,
+                    &m_profileBackendHandle)) {
+                QNN_ERROR("Unable to create profile handle in the backend.");
+                return StatusCode::FAILURE;
+            }
         }
     }
     return StatusCode::SUCCESS;
@@ -122,8 +135,10 @@ StatusCode QnnBackendManager::isDevicePropertySupported(QnnLoader& loader) {
 StatusCode QnnBackendManager::createDevice(QnnLoader& loader) {
     // TODO: Adapt to the user's device
     QnnHtpDevice_CustomConfig_t customConfig;
-    customConfig.option   = QNN_HTP_DEVICE_CONFIG_OPTION_SOC;
-    customConfig.unnamedUnion.socModel = QNN_SOC_MODEL_SM8550;
+    customConfig.option   = QNN_HTP_DEVICE_CONFIG_OPTION_ARCH;
+    customConfig.unnamedUnion.arch.arch = QNN_HTP_DEVICE_ARCH_V79;
+    customConfig.unnamedUnion.arch.deviceId = 0;
+
     QnnDevice_Config_t devConfig;
     devConfig.option = QNN_DEVICE_CONFIG_OPTION_CUSTOM;
     devConfig.customConfig = &customConfig;
@@ -176,7 +191,7 @@ StatusCode QnnBackendManager::extractProfilingSubEvents(QnnLoader& loader, QnnPr
         QNN_ERROR("Failure in profile get sub events.");
         return StatusCode::FAILURE;
     }
-    QNN_DEBUG("ProfileSubEvents: [%p], numSubEvents: [%d]", profileSubEvents, numSubEvents);
+//    QNN_DEBUG("ProfileSubEvents: [%p], numSubEvents: [%d]", profileSubEvents, numSubEvents);
     for (size_t subEvent = 0; subEvent < numSubEvents; subEvent++) {
         extractProfilingEvent(loader, *(profileSubEvents + subEvent));
         extractProfilingSubEvents(loader, *(profileSubEvents + subEvent));
@@ -192,6 +207,12 @@ StatusCode QnnBackendManager::extractProfilingEvent(QnnLoader& loader, QnnProfil
         QNN_ERROR("Failure in profile get event type.");
         return StatusCode::FAILURE;
     }
+    if (eventData.unit == QNN_PROFILE_EVENTUNIT_MICROSEC)
+        QNN_DEBUG("%s: %.3fms", eventData.identifier, eventData.value / 1000.0);
+    else if (eventData.type == QNN_PROFILE_EVENTTYPE_NODE) {
+//        QNN_DEBUG("%s,%llu", eventData.identifier, eventData.value);
+        addDataToStats(eventData.identifier, eventData.value);
+    }
     QNN_DEBUG("Printing Event Info - Event Type: [%d], Event Value: [%" "llu"
               "], Event Identifier: [%s], Event Unit: [%d]",
               eventData.type,
@@ -199,6 +220,51 @@ StatusCode QnnBackendManager::extractProfilingEvent(QnnLoader& loader, QnnProfil
               eventData.identifier,
               eventData.unit);
     return StatusCode::SUCCESS;
+}
+
+void QnnBackendManager::addDataToStats(std::string identifier, uint64_t cycles) {
+    if (stats.size() <= nodeNum) {
+        OpStats op;
+        op.identifier = identifier;
+        op.totalCycles = cycles;
+        op.count = 1;
+        stats.push_back(op);
+    } else {
+        // Optionally, check that the identifier matches.
+        if (stats[nodeNum].identifier != identifier) {
+            QNN_WARN("Event order mismatch at index %u: expected [%s], got [%s].",
+                     nodeNum, stats[nodeNum].identifier.c_str(), identifier.c_str());
+            // You may choose to search the vector by identifier if order isn’t fixed.
+        }
+        stats[nodeNum].totalCycles += cycles;
+        stats[nodeNum].count += 1;
+    }
+    nodeNum++;
+}
+
+void QnnBackendManager::saveStatsAsCsv(const std::string& fileName) {
+    std::ofstream outFile(fileName);
+    if (!outFile.is_open()) {
+        QNN_ERROR("Error opening file: %s", fileName.c_str());
+        return;
+    }
+
+    // Write CSV header
+    outFile << "Operation,AverageCycles\n";
+
+    // Write one line per operation.
+    for (const auto &entry : stats) {
+        const std::string &opName = entry.identifier;
+        const uint32_t totalCycles = entry.totalCycles;
+        const uint32_t count = entry.count;
+        // Compute average cycles if count > 0
+        uint64_t avgCycles = (count > 0) ? (totalCycles / count) : 0;
+        // Write CSV line (make sure to escape commas in opName if needed)
+        outFile << opName << "," << avgCycles << "\n";
+    }
+
+    outFile.close();
+    QNN_INFO("Stats saved to %s", fileName.c_str());
 }
 
 

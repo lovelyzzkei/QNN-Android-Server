@@ -19,7 +19,9 @@ public class NativeInterface {
             String modelFile,
             String backend,
             String precision,
-            String framework
+            String framework,
+            int vtcmSize,
+            int offset
     );
 
     // Power mode
@@ -31,5 +33,4 @@ public class NativeInterface {
 
     // Depth estimation
     public static native float[] getDepthMapJNI(byte[] cameraImageBuffer, int width, int height);
-
 }

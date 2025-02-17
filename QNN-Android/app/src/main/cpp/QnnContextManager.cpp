@@ -9,7 +9,9 @@
 
 
 // Create context and prepare the model
-StatusCode QnnContextManager::setup(QnnBackendManager& backendMgr, QnnLoader& loader) {
+StatusCode QnnContextManager::setup(QnnBackendManager& backendMgr, QnnLoader& loader, uint32_t vtcmSizeInMB) {
+    setVtcmSizeInMB(vtcmSizeInMB);
+
     // Create context
     if (StatusCode::SUCCESS != createContext(backendMgr, loader)) {
         QNN_ERROR("Failed to create context");
@@ -29,6 +31,8 @@ StatusCode QnnContextManager::setup(QnnBackendManager& backendMgr, QnnLoader& lo
         return StatusCode::FAILURE;
     }
     QNN_INFO("Graph Finalized");
+
+
 
     return StatusCode::SUCCESS;
 }
@@ -64,20 +68,47 @@ StatusCode QnnContextManager::composeGraph(QnnBackendManager& backendMgr, QnnLoa
         return StatusCode::FAILURE;
     }
 
-    // 1) A custom config structure for FLOAT16 precision
+    // A custom config structure for FLOAT16 precision
     static QnnHtpGraph_CustomConfig_t g_fp16PrecisionConfig = {
             .option    = QNN_HTP_GRAPH_CONFIG_OPTION_PRECISION,
             .precision = QNN_PRECISION_FLOAT16
     };
 
-    // 2) Wrap that in a standard QnnGraph_Config_t
+    // Graph optimization config
+    static QnnHtpGraph_CustomConfig_t graphOptConfig = {
+            .option = QNN_HTP_GRAPH_CONFIG_OPTION_OPTIMIZATION,
+            .optimizationOption = {
+                    .type = QNN_HTP_GRAPH_OPTIMIZATION_TYPE_FINALIZE_OPTIMIZATION_FLAG,
+                    .floatValue = 3
+            }
+    };
+
+    // VTCM size config
+    static QnnHtpGraph_CustomConfig_t vtcmConfig = {
+            .option = QNN_HTP_GRAPH_CONFIG_OPTION_VTCM_SIZE_IN_MB,
+            .vtcmSizeInMB = vtcmSizeInMB
+    };
+
+    // Wrap that in a standard QnnGraph_Config_t
     static QnnGraph_Config_t g_fp16GraphConfig = {
             .option       = QNN_GRAPH_CONFIG_OPTION_CUSTOM,
             .unnamedUnion = { .customConfig = &g_fp16PrecisionConfig }
     };
+    static QnnGraph_Config_t g_vtcmConfig = {
+            .option       = QNN_GRAPH_CONFIG_OPTION_CUSTOM,
+            .unnamedUnion = { .customConfig = &vtcmConfig }
+    };
+    static QnnGraph_Config_t g_graphOptConfig = {
+            .option       = QNN_GRAPH_CONFIG_OPTION_CUSTOM,
+            .unnamedUnion = { .customConfig = &graphOptConfig }
+    };
+
+
 
     static const QnnGraph_Config_t* g_myGraphConfigs[] = {
             &g_fp16GraphConfig,
+            &g_vtcmConfig,
+            &g_graphOptConfig,
             nullptr             // always null-terminated
     };
 
@@ -132,11 +163,11 @@ StatusCode QnnContextManager::finalizeGraphs(QnnBackendManager& backendMgr, QnnL
         if (QNN_GRAPH_NO_ERROR != status) {
             return StatusCode::FAILURE;
         }
+        if (ProfilingLevel::OFF != backendMgr.getProfilingLevel()) {
+            backendMgr.extractBackendProfilingInfo(loader);
+        }
+    }
 
-    }
-    if (ProfilingLevel::OFF != backendMgr.getProfilingLevel()) {
-        backendMgr.extractBackendProfilingInfo(loader);
-    }
     return StatusCode::SUCCESS;
 }
 
@@ -192,3 +223,4 @@ StatusCode QnnContextManager::getGraphName(QnnBackendManager& backendManager, Qn
     loader.getFunctionPointers().qnnInterface.contextFree(tmp_context, nullptr);
     return StatusCode::SUCCESS;
 }
+

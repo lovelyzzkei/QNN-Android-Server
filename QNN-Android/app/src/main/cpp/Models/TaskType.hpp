@@ -12,4 +12,13 @@ enum class TaskType {
     // ...
 };
 
+namespace std {
+    template <>
+    struct hash<TaskType> {
+        std::size_t operator()(const TaskType& t) const noexcept {
+            return std::hash<int>()(static_cast<int>(t));
+        }
+    };
+}
+
 #endif //APP_TASKTYPE_HPP

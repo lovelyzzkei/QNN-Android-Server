@@ -71,7 +71,7 @@ android {
         pickFirst 'lib/arm64-v8a/libc++_shared.so'
         pickFirst 'lib/arm64-v8a/libSNPE.so'
         pickFirst 'lib/arm64-v8a/libQnnTFLiteDelegate.so'
-        pickFirst 'lib/arm64-v8a/libQnnSystem.so'
+//        pickFirst 'lib/arm64-v8a/libQnnSystem.so'
     }
 
     externalNativeBuild {

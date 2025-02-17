@@ -5,7 +5,16 @@
 #ifndef APP_QNNBACKENDMANAGER_HPP
 #define APP_QNNBACKENDMANAGER_HPP
 
+#include <vector>
+#include <unordered_map>
 #include "QnnLoader.hpp"
+
+struct OpStats {
+    std::string identifier;
+    uint64_t totalCycles = 0;
+    uint32_t count = 0;
+};
+
 
 class QnnBackendManager {
 public:
@@ -19,6 +28,9 @@ public:
 
     StatusCode extractBackendProfilingInfo (QnnLoader& loader);
 
+    void addDataToStats(std::string identifier, uint64_t cycles);
+    void saveStatsAsCsv(const std::string& fileName);
+    int nodeNum = 0;
 private:
     StatusCode initializeLogging(QnnLoader& loader);
     StatusCode initializeBackend(QnnLoader& loader);
@@ -39,7 +51,7 @@ private:
     QnnBackend_Config_t **m_backendConfig = nullptr;
     ProfilingLevel m_profilingLevel = ProfilingLevel::BASIC;
 
-
+    std::vector<OpStats> stats;
 };
 
 

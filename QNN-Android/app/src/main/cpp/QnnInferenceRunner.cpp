@@ -5,6 +5,8 @@
 #include "Log/Logger.hpp"
 #include "Utils/DataUtil.hpp"
 #include "QnnInferenceRunner.hpp"
+#include "QnnMem.h"
+#include "HTP/QnnHtpMem.h"
 
 using namespace qnn::tools;
 
@@ -18,9 +20,10 @@ void QnnInferenceRunner::setup(qnn_wrapper_api::GraphInfo_t** graphsInfo,
 }
 
 
-StatusCode QnnInferenceRunner::execute(float32_t* inputBuffer, QnnLoader& loader, QnnBackendManager& backendMgr) {
+StatusCode QnnInferenceRunner::execute(float32_t* inputBuffer, QnnLoader& loader,
+                                       QnnBackendManager& backendMgr, QnnContextManager& contextMgr,
+                                       int vtcmSizeInMB, int offset) {
     auto returnStatus = StatusCode::SUCCESS;
-
 
     for (size_t graphIdx = 0; graphIdx < m_graphsCount; graphIdx++) {
         Qnn_Tensor_t* inputs = nullptr;
@@ -37,6 +40,7 @@ StatusCode QnnInferenceRunner::execute(float32_t* inputBuffer, QnnLoader& loader
             QNN_ERROR("inputs is nullptr");
             return StatusCode::FAILURE;
         }
+
 
         auto graphInfo = (*m_graphsInfo)[graphIdx];
         auto inputCount = graphInfo.numInputTensors;
@@ -78,7 +82,11 @@ StatusCode QnnInferenceRunner::execute(float32_t* inputBuffer, QnnLoader& loader
             QNN_ERROR("Execute Status: %d", executeStatus);
             return StatusCode::FAILURE;
         }
+
+        QNN_DEBUG("================ GRAPH EXECUTE PROFILE INFO ================");
+        backendMgr.nodeNum = 0;
         backendMgr.extractBackendProfilingInfo(loader);
+        QNN_DEBUG("===========================================================");
 
         auto outputsVector = retrieveOutputData(outputs, graphInfo.numOutputTensors);
         m_inferData = outputsVector;

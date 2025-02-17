@@ -14,6 +14,7 @@
 
 #include "QnnLoader.hpp"
 #include "QnnBackendManager.hpp"
+#include "QnnContextManager.hpp"
 #include "QnnTypeMacros.hpp"
 #include "Utils/IOTensor.hpp"
 #include "Utils/QnnSampleAppUtils.hpp"
@@ -24,19 +25,19 @@ public:
             size_t graphsCount,
             Qnn_ProfileHandle_t profileHandle);
 
-    StatusCode execute(float32_t* inputBuffer, QnnLoader& loader, QnnBackendManager& backendMgr);
+    StatusCode execute(float32_t* inputBuffer, QnnLoader& loader,
+                       QnnBackendManager& backendMgr, QnnContextManager& contextMgr, int vtcmSizeInMB, int offset);
 
     // Provide a getter for the final outputs
     const std::vector<std::pair<std::vector<size_t>, float32_t*>>& getOutputs() const {
         return m_inferData;
     }
+    // IO tensor
+    qnn::tools::iotensor::IOTensor m_ioTensor;
 
 private:
     std::vector<std::pair<std::vector<size_t>, float32_t*>> retrieveOutputData(Qnn_Tensor_t* outputs, int numOutputTensors);
     StatusCode fillDims(std::vector<size_t>& dims,uint32_t* inDimensions, uint32_t rank);
-
-    // IO tensor
-    qnn::tools::iotensor::IOTensor m_ioTensor;
 
     // references to the graph(s) we will execute
     qnn_wrapper_api::GraphInfo_t** m_graphsInfo = nullptr;

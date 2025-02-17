@@ -28,7 +28,7 @@ using namespace qnn::tools::sample_app;
 
 class QnnManager {
 public:
-    QnnManager(const char* model, const char* backend);
+    QnnManager(const char* models, const char* backend, const int vtcmSizeInMB, const int offset);
     ~QnnManager() = default;
 
     std::unique_ptr<QnnLoader> &getLoader() { return m_loader; }
@@ -37,9 +37,14 @@ public:
     std::unique_ptr<QnnContextManager> &getContextMgr() { return m_contextMgr; }
 
     StatusCode setPowerMode(int powerMode);
-
     StatusCode runInference(float32_t* inputBuffer);
     std::vector<std::pair<std::vector<size_t>, float32_t*>> m_inferData;
+
+    double getAvgInferenceTime(int frameIdx) { return avgInferenceTime / frameIdx; }
+    void addInferenceTime(double inferenceTime) {
+        avgInferenceTime += inferenceTime;
+        frameIdx++;
+    }
 
 private:
     static qnn_wrapper_api::ModelError_t QnnModel_freeGraphsInfo(qnn_wrapper_api::GraphInfoPtr_t **graphsInfo, uint32_t numGraphsInfo) {
@@ -57,6 +62,12 @@ private:
     std::unique_ptr<QnnPowerManager> m_powerMgr;
     std::unique_ptr<QnnContextManager> m_contextMgr;
     std::unique_ptr<QnnInferenceRunner> m_inferenceRunner;
+
+    int frameIdx = 0;
+
+    int offset = 0;
+    int vtcmSizeInMB = 2;   // Default
+    double avgInferenceTime = 0.0f;
 
 };
 

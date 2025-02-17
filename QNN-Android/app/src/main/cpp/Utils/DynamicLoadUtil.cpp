@@ -38,7 +38,7 @@ dynamicloadutil::StatusCode dynamicloadutil::getQnnFunctionPointers(
     QnnFunctionPointers* qnnFunctionPointers,
     void** backendHandleRtn,
     bool loadModelLib,
-    void** modelHandleRtn) {
+    void** modelHandleRtn){
 #if defined(__ANDROID__)
     void* libBackendHandle = pal::dynamicloading::dlOpen(
             backendPath.c_str(), pal::dynamicloading::DL_NOW | pal::dynamicloading::DL_LOCAL); // DL_LOCAL
@@ -92,6 +92,27 @@ dynamicloadutil::StatusCode dynamicloadutil::getQnnFunctionPointers(
         return StatusCode::FAIL_GET_INTERFACE_PROVIDERS;
     }
 
+    // Now, if required, load each model.
+//    if (loadModelLib) {
+//        QNN_INFO("Loading model shared libraries...");
+//        for (const auto& modelPath : modelPaths) {
+//            // Temporary storage for this model's function pointers.
+//            QnnModelFunctionPointers modelFuncs;
+//            void* modelHandle = nullptr;
+//            auto status = loadModelLibrary(modelPath, modelFuncs, &modelHandle);
+//            if (status != StatusCode::SUCCESS) {
+//                // Optionally, you could unload already loaded models here.
+//                return status;
+//            }
+//            // Save the handle and the function pointers.
+//            modelHandlesRtn.push_back(modelHandle);
+//            modelFuncsVec.push_back(modelFuncs);
+//        }
+//    } else {
+//        QNN_WARN("Model libraries were not loaded.");
+//    }
+
+
     if (true == loadModelLib) {
         QNN_INFO("Loading model shared library ([model].so)");
         void* libModelHandle = pal::dynamicloading::dlOpen(
@@ -126,6 +147,134 @@ dynamicloadutil::StatusCode dynamicloadutil::getQnnFunctionPointers(
     QNN_INFO("Model was loaded from a shared library.");
     return StatusCode::SUCCESS;
 }
+
+
+dynamicloadutil::StatusCode dynamicloadutil::getQnnMultiFunctionPointers(
+        std::string backendPath,
+        const std::vector<std::string>& modelPaths,
+        QnnFunctionPointers* qnnFunctionPointers,
+        void** backendHandleRtn,
+        bool loadModelLib,
+        std::vector<void*>& modelHandlesRtn,          // one handle per loaded model
+        std::vector<QnnModelFunctionPointers>& modelFuncsVec){
+#if defined(__ANDROID__)
+    void* libBackendHandle = pal::dynamicloading::dlOpen(
+            backendPath.c_str(), pal::dynamicloading::DL_NOW | pal::dynamicloading::DL_LOCAL); // DL_LOCAL
+#else
+    void* libBackendHandle = pal::dynamicloading::dlOpen(
+      backendPath.c_str(), pal::dynamicloading::DL_NOW | pal::dynamicloading::DL_GLOBAL);
+#endif
+    if (nullptr == libBackendHandle) {
+        QNN_ERROR("Unable to load backend. pal::dynamicloading::dlError(): %s",
+                  pal::dynamicloading::dlError());
+        return StatusCode::FAIL_LOAD_BACKEND;
+    }
+    QNN_INFO("Backend load successfully! Backend path: %s", backendPath.c_str());
+    if (nullptr != backendHandleRtn) {
+        *backendHandleRtn = libBackendHandle;
+    }
+    // Get QNN Interface
+    QnnInterfaceGetProvidersFn_t getInterfaceProviders{nullptr};
+    getInterfaceProviders =
+            resolveSymbol<QnnInterfaceGetProvidersFn_t>(libBackendHandle, "QnnInterface_getProviders");
+    if (nullptr == getInterfaceProviders) {
+        return StatusCode::FAIL_SYM_FUNCTION;
+    }
+    QnnInterface_t** interfaceProviders{nullptr};
+    uint32_t numProviders{0};
+    if (QNN_SUCCESS !=
+        getInterfaceProviders((const QnnInterface_t***)&interfaceProviders, &numProviders)) {
+        QNN_ERROR("Failed to get interface providers.");
+        return StatusCode::FAIL_GET_INTERFACE_PROVIDERS;
+    }
+    if (nullptr == interfaceProviders) {
+        QNN_ERROR("Failed to get interface providers: null interface providers received.");
+        return StatusCode::FAIL_GET_INTERFACE_PROVIDERS;
+    }
+    if (0 == numProviders) {
+        QNN_ERROR("Failed to get interface providers: 0 interface providers.");
+        return StatusCode::FAIL_GET_INTERFACE_PROVIDERS;
+    }
+    bool foundValidInterface{false};
+    for (size_t pIdx = 0; pIdx < numProviders; pIdx++) {
+        if (QNN_API_VERSION_MAJOR == interfaceProviders[pIdx]->apiVersion.coreApiVersion.major &&
+            QNN_API_VERSION_MINOR <= interfaceProviders[pIdx]->apiVersion.coreApiVersion.minor) {
+            foundValidInterface               = true;
+            qnnFunctionPointers->qnnInterface = interfaceProviders[pIdx]->QNN_INTERFACE_VER_NAME;
+            break;
+        }
+    }
+    if (!foundValidInterface) {
+        QNN_ERROR("Unable to find a valid interface.");
+        libBackendHandle = nullptr;
+        return StatusCode::FAIL_GET_INTERFACE_PROVIDERS;
+    }
+
+    // Now, if required, load each model.
+    if (loadModelLib) {
+        QNN_INFO("Loading model shared libraries...");
+        for (const auto& modelPath : modelPaths) {
+            // Temporary storage for this model's function pointers.
+            QnnModelFunctionPointers modelFuncs;
+            void* modelHandle = nullptr;
+            auto status = loadModelLibrary(modelPath, modelFuncs, &modelHandle);
+            if (status != StatusCode::SUCCESS) {
+                // Optionally, you could unload already loaded models here.
+                return status;
+            }
+            // Save the handle and the function pointers.
+            modelHandlesRtn.push_back(modelHandle);
+            modelFuncsVec.push_back(modelFuncs);
+        }
+    } else {
+        QNN_WARN("Model libraries were not loaded.");
+    }
+    return StatusCode::SUCCESS;
+}
+
+
+// Helper function to load one model and extract its function pointers.
+dynamicloadutil::StatusCode dynamicloadutil::loadModelLibrary(
+        const std::string& modelPath,
+        QnnModelFunctionPointers& modelFuncs,
+        void** modelHandleRtn)
+{
+    // Try to load the model shared library.
+    void* libModelHandle = pal::dynamicloading::dlOpen(
+            modelPath.c_str(), pal::dynamicloading::DL_NOW | pal::dynamicloading::DL_LOCAL);
+    if (nullptr == libModelHandle) {
+        QNN_ERROR("Unable to load model (%s). pal::dynamicloading::dlError(): %s",
+                  modelPath.c_str(), pal::dynamicloading::dlError());
+        return StatusCode::FAIL_LOAD_MODEL;
+    }
+    QNN_INFO("Model loaded successfully! Model path: %s", modelPath.c_str());
+    if (nullptr != modelHandleRtn) {
+        *modelHandleRtn = libModelHandle;
+    }
+
+    // Get the composeGraphs function pointer.
+    modelFuncs.composeGraphsFnHandle =
+            resolveSymbol<ComposeGraphsFnHandleType_t>(libModelHandle, "QnnModel_composeGraphs");
+    if (nullptr == modelFuncs.composeGraphsFnHandle) {
+        QNN_ERROR("Failed to resolve symbol QnnModel_composeGraphs in model: %s",
+                  modelPath.c_str());
+        return StatusCode::FAIL_SYM_FUNCTION;
+    }
+
+    // Get the freeGraphInfo function pointer.
+    modelFuncs.freeGraphInfoFnHandle =
+            resolveSymbol<FreeGraphInfoFnHandleType_t>(libModelHandle, "QnnModel_freeGraphsInfo");
+    if (nullptr == modelFuncs.freeGraphInfoFnHandle) {
+        QNN_ERROR("Failed to resolve symbol QnnModel_freeGraphsInfo in model: %s",
+                  modelPath.c_str());
+        return StatusCode::FAIL_SYM_FUNCTION;
+    }
+
+    QNN_INFO("Successfully loaded model: %s", modelPath.c_str());
+    return StatusCode::SUCCESS;
+}
+
+
 
 dynamicloadutil::StatusCode dynamicloadutil::getQnnSystemFunctionPointers(
     std::string systemLibraryPath, QnnFunctionPointers* qnnFunctionPointers) {

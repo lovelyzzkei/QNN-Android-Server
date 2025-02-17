@@ -418,6 +418,185 @@
 
             </androidx.cardview.widget.CardView>
 
+            <androidx.cardview.widget.CardView
+                android:id="@+id/image_classification_card"
+                android:layout_width="600dp"
+                android:layout_height="match_parent"
+                android:layout_marginEnd="16dp"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:layout_width="250dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1"
+                            android:src="@drawable/image_classification"
+                            android:adjustViewBounds="false"
+                            android:scaleType="centerCrop" />
+
+                        <Button
+                            android:id="@+id/ic_button"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:padding="16dp"
+                            android:text="Start!"
+                            android:textAllCaps="false"
+                            android:textColor="@color/primaryTextColor"
+                            android:textSize="16sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:orientation="vertical"
+                        android:gravity="center_horizontal"
+                        android:padding="10dp">
+
+                        <!-- Centered Title -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Image classification"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:textColor="@color/primaryTextColor"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="15dp"
+                            android:text="Image Classification is a fundamental task in vision recognition that aims to understand and categorize an image as a whole under a specific label."
+                            android:textSize="15sp"
+                            android:textColor="@color/primaryTextColor"/>
+
+
+                        <!-- Section for Spinner Labels and Spinners -->
+<!--                        <TextView-->
+<!--                            android:layout_width="wrap_content"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:layout_marginTop="15dp"-->
+<!--                            android:text="Model Configuration"-->
+<!--                            android:textSize="18sp"-->
+<!--                            android:textStyle="bold"-->
+<!--                            android:textColor="@color/primaryTextColor" />-->
+
+<!--                        &lt;!&ndash; Model Name Row &ndash;&gt;-->
+<!--                        <LinearLayout-->
+<!--                            android:layout_width="match_parent"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:orientation="horizontal"-->
+<!--                            android:layout_marginTop="8dp"-->
+<!--                            android:gravity="center_vertical">-->
+
+<!--                            <TextView-->
+<!--                                android:layout_width="0dp"-->
+<!--                                android:layout_height="wrap_content"-->
+<!--                                android:layout_weight="0.4"-->
+<!--                                android:text="Model:"-->
+<!--                                android:textSize="16sp"-->
+<!--                                android:textColor="@color/primaryTextColor"-->
+<!--                                android:textStyle="bold"-->
+<!--                                android:layout_marginEnd="16dp" />-->
+
+<!--                            <Spinner-->
+<!--                                android:id="@+id/spinner_de_model"-->
+<!--                                android:layout_width="0dp"-->
+<!--                                android:layout_height="wrap_content"-->
+<!--                                android:layout_weight="1" />-->
+<!--                        </LinearLayout>-->
+
+<!--                        &lt;!&ndash; Framework Row &ndash;&gt;-->
+<!--                        <LinearLayout-->
+<!--                            android:layout_width="match_parent"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:orientation="horizontal"-->
+<!--                            android:layout_marginTop="8dp"-->
+<!--                            android:gravity="center_vertical">-->
+
+<!--                            <TextView-->
+<!--                                android:layout_width="0dp"-->
+<!--                                android:layout_height="wrap_content"-->
+<!--                                android:layout_weight="0.4"-->
+<!--                                android:text="Framework:"-->
+<!--                                android:textSize="16sp"-->
+<!--                                android:textColor="@color/primaryTextColor"-->
+<!--                                android:textStyle="bold"-->
+<!--                                android:layout_marginEnd="16dp" />-->
+
+<!--                            <Spinner-->
+<!--                                android:id="@+id/spinner_de_framework"-->
+<!--                                android:layout_width="0dp"-->
+<!--                                android:layout_height="wrap_content"-->
+<!--                                android:layout_weight="1" />-->
+<!--                        </LinearLayout>-->
+
+
+<!--                        &lt;!&ndash; Backend Row &ndash;&gt;-->
+<!--                        <LinearLayout-->
+<!--                            android:layout_width="match_parent"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:orientation="horizontal"-->
+<!--                            android:layout_marginTop="8dp"-->
+<!--                            android:gravity="center_vertical">-->
+
+<!--                            <TextView-->
+<!--                                android:layout_width="0dp"-->
+<!--                                android:layout_height="wrap_content"-->
+<!--                                android:layout_weight="0.4"-->
+<!--                                android:text="Backend:"-->
+<!--                                android:textSize="16sp"-->
+<!--                                android:textColor="@color/primaryTextColor"-->
+<!--                                android:textStyle="bold"-->
+<!--                                android:layout_marginEnd="16dp" />-->
+
+<!--                            <Spinner-->
+<!--                                android:id="@+id/spinner_de_backend"-->
+<!--                                android:layout_width="0dp"-->
+<!--                                android:layout_height="wrap_content"-->
+<!--                                android:layout_weight="1" />-->
+<!--                        </LinearLayout>-->
+
+<!--                        &lt;!&ndash; Precision Row &ndash;&gt;-->
+<!--                        <LinearLayout-->
+<!--                            android:layout_width="match_parent"-->
+<!--                            android:layout_height="wrap_content"-->
+<!--                            android:orientation="horizontal"-->
+<!--                            android:layout_marginTop="8dp"-->
+<!--                            android:gravity="center_vertical">-->
+
+<!--                            <TextView-->
+<!--                                android:layout_width="0dp"-->
+<!--                                android:layout_height="wrap_content"-->
+<!--                                android:layout_weight="0.4"-->
+<!--                                android:text="Precision:"-->
+<!--                                android:textSize="16sp"-->
+<!--                                android:textColor="@color/primaryTextColor"-->
+<!--                                android:textStyle="bold"-->
+<!--                                android:layout_marginEnd="16dp" />-->
+
+<!--                            <Spinner-->
+<!--                                android:id="@+id/spinner_de_precision"-->
+<!--                                android:layout_width="0dp"-->
+<!--                                android:layout_height="wrap_content"-->
+<!--                                android:layout_weight="1" />-->
+<!--                        </LinearLayout>-->
+                    </LinearLayout>
+                </LinearLayout>
+
+
+            </androidx.cardview.widget.CardView>
+
             <!-- Second Card -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/sr_card"

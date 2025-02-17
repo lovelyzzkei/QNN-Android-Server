@@ -24,7 +24,7 @@ public class DepthEstimationManager implements BaseManager {
     @Override
     public void initialize(String device, String nativeLibDir,
                            String model, String backend,
-                           String precision, String framework) {
+                           String precision, String framework, int vtcmSize, int offset) {
         NativeInterface.initializeModelJNI(
                 taskType.ordinal(),
                 device,
@@ -32,7 +32,9 @@ public class DepthEstimationManager implements BaseManager {
                 model,
                 backend,
                 precision,
-                framework
+                framework,
+                vtcmSize,
+                offset
         );
         isInitialized = true;
         LogUtils.info("[DepthEstimationManager] Depth manager initialized.");

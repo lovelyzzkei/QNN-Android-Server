@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.22.1)
 
 project("QnnAndroid")
 
-
+set(CMAKE_CXX_STANDARD 17)
 set(BUILD_SUBDIR ${ANDROID_ABI})
 
 find_package(OpenMP)

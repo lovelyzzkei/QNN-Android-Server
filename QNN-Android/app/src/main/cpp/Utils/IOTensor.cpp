@@ -18,6 +18,7 @@
 #include "../PAL/Path.hpp"
 #include "../PAL/StringOp.hpp"
 #include "../QnnTypeMacros.hpp"
+#include "HTP/QnnHtpMem.h"
 
 using namespace qnn;
 using namespace qnn::tools;
@@ -298,69 +299,76 @@ iotensor::PopulateInputTensorsRetType_t iotensor::IOTensor::populateInputTensors
   return {StatusCode::SUCCESS, numFilesPopulated, numBatchSize};
 }
 
+
+
 // Setup details for Qnn_Tensor_t for execution
 // based on information in Qnn_TensorWrapper_t provided by model.so.
 iotensor::StatusCode iotensor::IOTensor::setupTensors(Qnn_Tensor_t** tensors,
-                                                      uint32_t tensorCount,
-                                                      Qnn_Tensor_t* tensorWrappers) {
-  if (nullptr == tensorWrappers) {
-    QNN_ERROR("tensorWrappers is nullptr");
-    return StatusCode::FAILURE;
-  }
-  if (0 == tensorCount) {
-    QNN_INFO("tensor count is 0. Nothing to setup.");
-    return StatusCode::SUCCESS;
-  }
-  auto returnStatus = StatusCode::SUCCESS;
-  *tensors          = (Qnn_Tensor_t*)calloc(1, tensorCount * sizeof(Qnn_Tensor_t));
-  if (nullptr == *tensors) {
-    QNN_ERROR("mem alloc failed for *tensors");
-    returnStatus = StatusCode::FAILURE;
-    return returnStatus;
-  }
-  for (size_t tensorIdx = 0; tensorIdx < tensorCount; tensorIdx++) {
-    Qnn_Tensor_t wrapperTensor = tensorWrappers[tensorIdx];
-    std::vector<size_t> dims;
-    fillDims(dims, QNN_TENSOR_GET_DIMENSIONS(wrapperTensor), QNN_TENSOR_GET_RANK(wrapperTensor));
-    if (StatusCode::SUCCESS == returnStatus) {
+                                                           uint32_t tensorCount,
+                                                           Qnn_Tensor_t* tensorWrappers) {
+    if (nullptr == tensorWrappers) {
+        QNN_ERROR("tensorWrappers is nullptr");
+        return StatusCode::FAILURE;
+    }
+    if (0 == tensorCount) {
+        QNN_INFO("tensor count is 0. Nothing to setup.");
+        return StatusCode::SUCCESS;
+    }
+    auto returnStatus = StatusCode::SUCCESS;
+    *tensors          = (Qnn_Tensor_t*)calloc(1, tensorCount * sizeof(Qnn_Tensor_t));
+    if (nullptr == *tensors) {
+        QNN_ERROR("mem alloc failed for *tensors");
+        returnStatus = StatusCode::FAILURE;
+        return returnStatus;
+    }
+    for (size_t tensorIdx = 0; tensorIdx < tensorCount; tensorIdx++) {
+        Qnn_Tensor_t wrapperTensor = tensorWrappers[tensorIdx];
+        std::vector<size_t> dims;
+        fillDims(dims, QNN_TENSOR_GET_DIMENSIONS(wrapperTensor), QNN_TENSOR_GET_RANK(wrapperTensor));
+
+
+        if (StatusCode::SUCCESS == returnStatus) {
 //      QNN_DEBUG("allocateBuffer successful");
-      (*tensors)[tensorIdx] = QNN_TENSOR_INIT;
-      returnStatus =
-          (sample_app::deepCopyQnnTensorInfo(((*tensors) + tensorIdx), &wrapperTensor) == true
-               ? StatusCode::SUCCESS
-               : StatusCode::FAILURE);
-    }
-    if (StatusCode::SUCCESS == returnStatus) {
+            (*tensors)[tensorIdx] = QNN_TENSOR_INIT;
+            returnStatus =
+                    (sample_app::deepCopyQnnTensorInfo(((*tensors) + tensorIdx), &wrapperTensor) == true
+                     ? StatusCode::SUCCESS
+                     : StatusCode::FAILURE);
+        }
+        if (StatusCode::SUCCESS == returnStatus) {
 //      QNN_DEBUG("deepCopyQnnTensorInfo successful");
-      QNN_TENSOR_SET_MEM_TYPE(((*tensors) + tensorIdx), QNN_TENSORMEMTYPE_RAW);
+            QNN_TENSOR_SET_MEM_TYPE(((*tensors) + tensorIdx), QNN_TENSORMEMTYPE_RAW);
+//        QNN_TENSOR_SET_MEM_TYPE(((*tensors) + tensorIdx), QNN_HTP_MEM_QURT);
+
+        }
+        Qnn_ClientBuffer_t clientBuffer = QNN_CLIENT_BUFFER_INIT;
+        returnStatus = allocateBuffer(reinterpret_cast<uint8_t**>(&clientBuffer.data),
+                                      dims,
+                                      QNN_TENSOR_GET_DATA_TYPE((*tensors) + tensorIdx));
+        datautil::StatusCode datautilStatus{datautil::StatusCode::SUCCESS};
+        size_t length{0};
+        std::tie(datautilStatus, length) =
+                datautil::calculateLength(dims, QNN_TENSOR_GET_DATA_TYPE((*tensors) + tensorIdx));
+        if (datautilStatus != datautil::StatusCode::SUCCESS) {
+            returnStatus = StatusCode::FAILURE;
+        }
+        clientBuffer.dataSize = length;
+        QNN_TENSOR_SET_CLIENT_BUF(((*tensors) + tensorIdx), clientBuffer);
+        if (StatusCode::SUCCESS != returnStatus) {
+            QNN_ERROR("Failure in setupTensors, cleaning up resources");
+            if (nullptr != (QNN_TENSOR_GET_CLIENT_BUF((*tensors) + tensorIdx)).data) {
+                free(QNN_TENSOR_GET_CLIENT_BUF((*tensors) + tensorIdx).data);
+            }
+            tearDownTensors(*tensors, tensorIdx);
+            *tensors     = nullptr;
+            returnStatus = StatusCode::FAILURE;
+            QNN_ERROR("Failure in setupTensors, done cleaning up resources");
+            return returnStatus;
+        }
     }
-    Qnn_ClientBuffer_t clientBuffer = QNN_CLIENT_BUFFER_INIT;
-    returnStatus = allocateBuffer(reinterpret_cast<uint8_t**>(&clientBuffer.data),
-                                  dims,
-                                  QNN_TENSOR_GET_DATA_TYPE((*tensors) + tensorIdx));
-    datautil::StatusCode datautilStatus{datautil::StatusCode::SUCCESS};
-    size_t length{0};
-    std::tie(datautilStatus, length) =
-        datautil::calculateLength(dims, QNN_TENSOR_GET_DATA_TYPE((*tensors) + tensorIdx));
-    if (datautilStatus != datautil::StatusCode::SUCCESS) {
-      returnStatus = StatusCode::FAILURE;
-    }
-    clientBuffer.dataSize = length;
-    QNN_TENSOR_SET_CLIENT_BUF(((*tensors) + tensorIdx), clientBuffer);
-    if (StatusCode::SUCCESS != returnStatus) {
-      QNN_ERROR("Failure in setupTensors, cleaning up resources");
-      if (nullptr != (QNN_TENSOR_GET_CLIENT_BUF((*tensors) + tensorIdx)).data) {
-        free(QNN_TENSOR_GET_CLIENT_BUF((*tensors) + tensorIdx).data);
-      }
-      tearDownTensors(*tensors, tensorIdx);
-      *tensors     = nullptr;
-      returnStatus = StatusCode::FAILURE;
-      QNN_ERROR("Failure in setupTensors, done cleaning up resources");
-      return returnStatus;
-    }
-  }
-  return returnStatus;
+    return returnStatus;
 }
+
 
 // Setup details for all input and output tensors for graph execution.
 iotensor::StatusCode iotensor::IOTensor::setupInputAndOutputTensors(
@@ -372,7 +380,7 @@ iotensor::StatusCode iotensor::IOTensor::setupInputAndOutputTensors(
     returnStatus = StatusCode::FAILURE;
   }
   if (StatusCode::SUCCESS !=
-      setupTensors(outputs, graphInfo.numOutputTensors, (graphInfo.outputTensors))) {
+    setupTensors(outputs, graphInfo.numOutputTensors, (graphInfo.outputTensors))) {
     QNN_ERROR("Failure in setting up output tensors");
     returnStatus = StatusCode::FAILURE;
   }
@@ -392,6 +400,9 @@ iotensor::StatusCode iotensor::IOTensor::setupInputAndOutputTensors(
   }
   return returnStatus;
 }
+
+
+
 
 // Clean up all tensors related data after execution.
 iotensor::StatusCode iotensor::IOTensor::tearDownTensors(Qnn_Tensor_t* tensors,

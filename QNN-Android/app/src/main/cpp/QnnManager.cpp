@@ -13,11 +13,12 @@ using namespace qnn::tools;
 using namespace qnn::tools::sample_app;
 
 
-QnnManager::QnnManager(const char* model, const char* backend) {
-    std::string modelPath = std::string(model);
+QnnManager::QnnManager(const char* model, const char* backend, const int vtcmSizeInMB, const int offset) {
     std::string backEndPath = std::string(backend);
+    this->vtcmSizeInMB = vtcmSizeInMB;
+    this->offset = offset;
 
-    m_loader        = std::make_unique<QnnLoader>(modelPath, backEndPath);
+    m_loader        = std::make_unique<QnnLoader>(model, backEndPath);
     m_backendMgr    = std::make_unique<QnnBackendManager>();
     m_powerMgr      = std::make_unique<QnnPowerManager>();
     m_contextMgr    = std::make_unique<QnnContextManager>();
@@ -57,7 +58,7 @@ StatusCode QnnManager::setup() {
     }
 
     // Step D: create context, compose graphs
-    status = m_contextMgr->setup(*m_backendMgr, *m_loader);
+    status = m_contextMgr->setup(*m_backendMgr, *m_loader, vtcmSizeInMB);
     if (status != StatusCode::SUCCESS) {
         QNN_ERROR("Context creation or graph compose failed");
         return status;
@@ -79,12 +80,25 @@ StatusCode QnnManager::runInference(float32_t* inputBuffer) {
 //    m_powerMgr->setPowerConfig(*m_loader);
 
     // Delegates the actual run to m_inferenceRunner
-    auto status = m_inferenceRunner->execute(inputBuffer, *m_loader, *m_backendMgr);
+    auto start = std::chrono::high_resolution_clock::now();
+    auto status = m_inferenceRunner->execute(inputBuffer, *m_loader, *m_backendMgr, *m_contextMgr, vtcmSizeInMB, offset);
     if (status != StatusCode::SUCCESS) {
         return status;
     }
     // Retrieve the outputs from the runner if needed
     m_inferData = m_inferenceRunner->getOutputs();
+    auto end = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration<double, std::milli>(end - start);
+    addInferenceTime(duration.count());
+    QNN_INFO("Average inference time: %.3f ms", getAvgInferenceTime(frameIdx));
+
+    // Store stats
+//    if (frameIdx == 100) {
+//        char filename[100];
+//        sprintf(filename, "/sdcard/download/yolov6_480x640_vtcm_size_%dMB.csv", vtcmSizeInMB);
+//        m_backendMgr->saveStatsAsCsv(filename);
+//    }
+
     return status;
 }
 
@@ -102,10 +116,93 @@ StatusCode QnnManager::setPowerMode(int powerMode) {
 
 
 
-StatusCode QnnManager::createFromBinary() {
-    QNN_WARN("createFromBinary() not implemented");
-    return StatusCode::SUCCESS;
-}
+//StatusCode QnnManager::createFromBinary(char* buffer, long bufferSize) {
+//    if (nullptr == m_qnnFunctionPointers.qnnSystemInterface.systemContextCreate ||
+//        nullptr == m_qnnFunctionPointers.qnnSystemInterface.systemContextGetBinaryInfo ||
+//        nullptr == m_qnnFunctionPointers.qnnSystemInterface.systemContextFree) {
+//        __android_log_print(ANDROID_LOG_ERROR, "QNN ", "QNN System function pointers are not populated\n");
+//        return StatusCode::FAILURE;
+//    }
+//
+//    if (0 == bufferSize) {
+//        __android_log_print(ANDROID_LOG_ERROR, "QNN ", "Received path to an empty file. Nothing to deserialize\n");
+//        return StatusCode::FAILURE;
+//    }
+//    if (!buffer) {
+//        __android_log_print(ANDROID_LOG_ERROR, "QNN ", "Failed to allocate memory.\n");
+//        return StatusCode::FAILURE;
+//    }
+//
+//    // inspect binary info
+//    auto returnStatus = StatusCode::SUCCESS;
+//    QnnSystemContext_Handle_t sysCtxHandle{nullptr};
+//    if (QNN_SUCCESS != m_qnnFunctionPointers.qnnSystemInterface.systemContextCreate(&sysCtxHandle)) {
+//        __android_log_print(ANDROID_LOG_ERROR, "QNN ", "Could not create system handle.\n");
+//        returnStatus = StatusCode::FAILURE;
+//    }
+//    const QnnSystemContext_BinaryInfo_t* binaryInfo{nullptr};
+//    Qnn_ContextBinarySize_t binaryInfoSize{0};
+//    if (StatusCode::SUCCESS == returnStatus &&
+//        QNN_SUCCESS != m_qnnFunctionPointers.qnnSystemInterface.systemContextGetBinaryInfo(
+//                sysCtxHandle,
+//                static_cast<void*>(buffer),
+//                bufferSize,
+//                &binaryInfo,
+//                &binaryInfoSize)) {
+//        __android_log_print(ANDROID_LOG_ERROR, "QNN ", "Failed to get context binary info\n");
+//        returnStatus = StatusCode::FAILURE;
+//    }
+//
+//    // fill GraphInfo_t based on binary info
+//    if (StatusCode::SUCCESS == returnStatus &&
+//        !copyMetadataToGraphsInfo(binaryInfo, m_graphsInfo, m_graphsCount)) {
+//        __android_log_print(ANDROID_LOG_ERROR, "QNN ", "Failed to copy metadata.\n");
+//        returnStatus = StatusCode::FAILURE;
+//    }
+//    m_qnnFunctionPointers.qnnSystemInterface.systemContextFree(sysCtxHandle);
+//    sysCtxHandle = nullptr;
+//
+//    if (StatusCode::SUCCESS == returnStatus &&
+//        nullptr == m_qnnFunctionPointers.qnnInterface.contextCreateFromBinary) {
+//        __android_log_print(ANDROID_LOG_ERROR, "QNN ", "contextCreateFromBinaryFnHandle is nullptr.\n");
+//        returnStatus = StatusCode::FAILURE;
+//    }
+//    if (StatusCode::SUCCESS == returnStatus &&
+//        m_qnnFunctionPointers.qnnInterface.contextCreateFromBinary(
+//                m_backendHandle,
+//                m_deviceHandle,
+//                (const QnnContext_Config_t**)&m_contextConfig,
+//                static_cast<void*>(buffer),
+//                bufferSize,
+//                &m_context,
+//                m_profileBackendHandle)) {
+//        __android_log_print(ANDROID_LOG_ERROR, "QNN ", "Could not create context from binary.\n");
+//        returnStatus = StatusCode::FAILURE;
+//    }
+//    if (ProfilingLevel::OFF != m_profilingLevel) {
+//        extractBackendProfilingInfo(m_profileBackendHandle);
+//    }
+//    m_isContextCreated = true;
+//    if (StatusCode::SUCCESS == returnStatus) {
+//        for (size_t graphIdx = 0; graphIdx < m_graphsCount; graphIdx++) {
+//            if (nullptr == m_qnnFunctionPointers.qnnInterface.graphRetrieve) {
+//                __android_log_print(ANDROID_LOG_ERROR, "QNN ", "graphRetrieveFnHandle is nullptr.\n");
+//                returnStatus = StatusCode::FAILURE;
+//                break;
+//            }
+//            if (QNN_SUCCESS !=
+//                m_qnnFunctionPointers.qnnInterface.graphRetrieve(
+//                        m_context, (*m_graphsInfo)[graphIdx].graphName, &((*m_graphsInfo)[graphIdx].graph))) {
+//                __android_log_print(ANDROID_LOG_ERROR, "QNN ", "Unable to retrieve graph handle for graph Idx.\n");
+//                returnStatus = StatusCode::FAILURE;
+//            }
+//        }
+//    }
+//    if (StatusCode::SUCCESS != returnStatus) {
+//        //qnn_wrapper_api::freeGraphsInfo(&m_graphsInfo, m_graphsCount);
+//    }
+//    return returnStatus;
+//}
 
 
 

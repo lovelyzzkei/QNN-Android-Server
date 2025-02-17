@@ -8,8 +8,8 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "CommonModelBase.hpp"
 #include "QnnManager.hpp"
+#include "IModel.hpp"
 
 struct Detection {
     float x1;
@@ -26,7 +26,7 @@ struct DetectionResult {
 };
 
 
-class YoloModel : public CommonModelBase {
+class YoloModel : public IModel {
 public:
     YoloModel();
     virtual ~YoloModel() {}

@@ -10,6 +10,10 @@
 #include <memory>
 #include <queue>
 
+
+#include "QnnContextManager.hpp"
+#include "QnnLoader.hpp"
+
 #include "QnnBackend.h"
 #include "QnnCommon.h"
 #include "QnnContext.h"
@@ -20,9 +24,10 @@
 #include "QnnTypes.h"
 #include "../QnnWrapperUtils.hpp"
 
-namespace qnn {
-namespace tools {
-namespace iotensor {
+
+
+
+namespace qnn::tools::iotensor {
 
 enum class StatusCode { SUCCESS, FAILURE };
 enum class OutputDataType { FLOAT_ONLY, NATIVE_ONLY, FLOAT_AND_NATIVE, INVALID };
@@ -66,6 +71,7 @@ class IOTensor {
                                            Qnn_Tensor_t *outputs,
                                            size_t numInputTensors,
                                            size_t numOutputTensors);
+    int currentOffset = 0;
 
  private:
   PopulateInputTensorsRetType_t populateInputTensor(const std::vector<std::string> &filePaths,
@@ -108,8 +114,10 @@ class IOTensor {
 
   StatusCode setupTensors(Qnn_Tensor_t **tensors, uint32_t tensorCount, Qnn_Tensor_t *tensorsInfo);
 
+
   StatusCode fillDims(std::vector<size_t> &dims, uint32_t *inDimensions, uint32_t rank);
+
+
 };
-}  // namespace iotensor
-}  // namespace tools
-}  // namespace qnn
+} // namespace qnn::tools::iotensor
+

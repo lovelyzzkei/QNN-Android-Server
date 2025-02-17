@@ -9,11 +9,11 @@
 #pragma once
 #include <vector>
 #include <string>
-#include "CommonModelBase.hpp"
 #include "QnnManager.hpp"
+#include "IModel.hpp"
 
 
-class DAv2Model : public CommonModelBase {
+class DAv2Model : public IModel {
 public:
     DAv2Model() = default;
     virtual ~DAv2Model() = default;
