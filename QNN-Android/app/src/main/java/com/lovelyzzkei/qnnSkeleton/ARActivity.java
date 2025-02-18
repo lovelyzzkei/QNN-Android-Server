@@ -22,6 +22,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.lovelyzzkei.qnnSkeleton.common.LogUtils;
 import com.lovelyzzkei.qnnSkeleton.common.helpers.CameraPermissionHelper;
 import com.lovelyzzkei.qnnSkeleton.common.helpers.DepthSettings;
 import com.lovelyzzkei.qnnSkeleton.common.helpers.InstantPlacementSettings;
@@ -52,6 +53,7 @@ import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
 import com.google.ar.core.exceptions.UnavailableUserDeclinedInstallationException;
 import com.lovelyzzkei.qnnSkeleton.samplerender.SampleRender;
 import com.lovelyzzkei.qnnSkeleton.tasks.DepthEstimationManager;
+import com.lovelyzzkei.qnnSkeleton.tasks.ImageClassificationManager;
 import com.lovelyzzkei.qnnSkeleton.tasks.ObjectDetectionManager;
 import com.lovelyzzkei.qnnSkeleton.tasks.TaskManagerFactory;
 import com.lovelyzzkei.qnnSkeleton.tasks.base.BaseManager;
@@ -63,6 +65,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 
 public class ARActivity extends AppCompatActivity implements SampleRender.Renderer{
@@ -195,6 +198,10 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
                         selectedFramework,
                         vtcmSizeInMB,
                         0);
+
+                if (manager instanceof ImageClassificationManager) {
+                    ImageClassificationManager.loadLabels(this, "imagenet_labels.txt");
+                }
 
                 isInitialized = true;
 
@@ -483,6 +490,11 @@ public class ARActivity extends AppCompatActivity implements SampleRender.Render
                     DepthEstimationManager.DepthResult depthResult = (DepthEstimationManager.DepthResult) result;
                     float[] depthMap = depthResult.depthMap;
                     renderDepthMap(depthMap);
+                }
+                else if (result instanceof ImageClassificationManager.ImageClassificationResult) {
+                    ImageClassificationManager.ImageClassificationResult classificationResult = (ImageClassificationManager.ImageClassificationResult) result;
+                    List<String> topLabels = classificationResult.getTopKLabels();
+                    LogUtils.debug("Top labels: " + topLabels.toString());
                 }
 
 

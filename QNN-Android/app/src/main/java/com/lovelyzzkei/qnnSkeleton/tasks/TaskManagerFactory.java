@@ -10,8 +10,10 @@ public class TaskManagerFactory {
                 return new ObjectDetectionManager();
             case DEPTH_ESTIMATION:
                 return new DepthEstimationManager();
+            case IMAGE_CLASSIFICATION:
+                return new ImageClassificationManager();
             case SUPER_RESOLUTION:
-                // return new SuperResolutionManager();
+                 return new SuperResolutionManager();
                 // (You'd implement that class similarly)
             default:
                 throw new IllegalArgumentException("Unsupported task: " + taskType);

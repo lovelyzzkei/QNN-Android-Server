@@ -8,6 +8,7 @@
 enum class TaskType {
     OBJECT_DETECTION = 0,
     DEPTH_ESTIMATION,
+    IMAGE_CLASSIFICATION,
     SUPER_RESOLUTION
     // ...
 };

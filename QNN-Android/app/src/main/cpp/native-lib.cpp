@@ -143,7 +143,6 @@ Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getObjectBoxesJNI(JNIEnv *env, 
                                                     jint height) {
     jbyte * pYUVFrameData = env->GetByteArrayElements(YUVFrameData, 0);
 
-    bool modelFromMultiTaskMgr = false;
     std::unique_ptr<IModel> lModel = nullptr;
     std::vector<Detection>* detectionResults;
 
@@ -155,9 +154,10 @@ Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getObjectBoxesJNI(JNIEnv *env, 
     logExecutionTime("Inference", [&]() {
         lModel->inference();
     });
-    logExecutionTime("Postprocess", [&]() {
-        detectionResults = (std::vector<Detection>*)lModel->postprocess();
-    });
+//    logExecutionTime("Postprocess", [&]() {
+//        detectionResults = (std::vector<Detection>*)lModel->postprocess();
+//    });
+    detectionResults = new std::vector<Detection>();
     gModel = std::move(lModel);
 
 
@@ -194,7 +194,6 @@ Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getDepthMapJNI(JNIEnv *env, jcl
                                                           jint height) {
     jbyte *pYUVFrameData = env->GetByteArrayElements(YUVFrameData, 0);
 
-    bool modelFromMultiTaskMgr = false;
     std::unique_ptr<IModel> lModel = nullptr;
     std::vector<float>* depthData;
     lModel = std::move(gModel);
@@ -214,5 +213,66 @@ Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getDepthMapJNI(JNIEnv *env, jcl
 
     jfloatArray depthDataArray = env->NewFloatArray(depthData->size());
     env->SetFloatArrayRegion(depthDataArray, 0, depthData->size(), depthData->data());
+    return depthDataArray;
+}
+
+extern "C"
+JNIEXPORT jfloatArray JNICALL
+Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getClassLogitsJNI(JNIEnv *env, jclass clazz,
+                                                                   jbyteArray YUVFrameData,
+                                                                   jint width, jint height) {
+    jbyte *pYUVFrameData = env->GetByteArrayElements(YUVFrameData, 0);
+
+    std::unique_ptr<IModel> lModel = nullptr;
+    std::vector<float>* classLogits;
+    lModel = std::move(gModel);
+
+
+    logExecutionTime("Preprocess", [&]() {
+        lModel->preprocess((unsigned char*)pYUVFrameData, width, height);
+    });
+    logExecutionTime("Inference", [&]() {
+        lModel->inference();
+    });
+    logExecutionTime("Postprocess", [&]() {
+        classLogits = (std::vector<float>*)lModel->postprocess();
+    });
+    gModel = std::move(lModel);
+
+
+    jfloatArray classLogitsArray = env->NewFloatArray(classLogits->size());
+    env->SetFloatArrayRegion(classLogitsArray, 0, classLogits->size(), classLogits->data());
+    return classLogitsArray;
+}
+
+
+
+extern "C"
+JNIEXPORT jfloatArray JNICALL
+Java_com_lovelyzzkei_qnnSkeleton_NativeInterface_getUpscaledImageJNI(JNIEnv *env, jclass clazz,
+                                                                     jbyteArray YUVFrameData,
+                                                                     jint width, jint height) {
+    jbyte *pYUVFrameData = env->GetByteArrayElements(YUVFrameData, 0);
+
+    std::unique_ptr<IModel> lModel = nullptr;
+    std::vector<float>* upscaledData;
+    lModel = std::move(gModel);
+
+
+    logExecutionTime("Preprocess", [&]() {
+        lModel->preprocess((unsigned char*)pYUVFrameData, width, height);
+    });
+    logExecutionTime("Inference", [&]() {
+        lModel->inference();
+    });
+//    logExecutionTime("Postprocess", [&]() {
+//        upscaledData = (std::vector<float>*)lModel->postprocess();
+//    });
+    upscaledData = new std::vector<float>();
+    gModel = std::move(lModel);
+
+
+    jfloatArray depthDataArray = env->NewFloatArray(upscaledData->size());
+    env->SetFloatArrayRegion(depthDataArray, 0, upscaledData->size(), upscaledData->data());
     return depthDataArray;
 }

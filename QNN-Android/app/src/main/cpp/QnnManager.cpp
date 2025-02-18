@@ -85,12 +85,14 @@ StatusCode QnnManager::runInference(float32_t* inputBuffer) {
     if (status != StatusCode::SUCCESS) {
         return status;
     }
-    // Retrieve the outputs from the runner if needed
-    m_inferData = m_inferenceRunner->getOutputs();
+
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration<double, std::milli>(end - start);
     addInferenceTime(duration.count());
     QNN_INFO("Average inference time: %.3f ms", getAvgInferenceTime(frameIdx));
+
+    // Retrieve the outputs from the runner if needed
+    m_inferData = m_inferenceRunner->getOutputs();
 
     // Store stats
 //    if (frameIdx == 100) {

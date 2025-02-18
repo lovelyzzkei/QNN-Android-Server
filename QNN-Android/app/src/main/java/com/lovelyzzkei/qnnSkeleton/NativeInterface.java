@@ -33,4 +33,9 @@ public class NativeInterface {
 
     // Depth estimation
     public static native float[] getDepthMapJNI(byte[] cameraImageBuffer, int width, int height);
+    // Image classification
+    public static native float[] getClassLogitsJNI(byte[] cameraImageBuffer, int width, int height);
+
+    // Super resolution
+    public static native float[] getUpscaledImageJNI(byte[] cameraImageBuffer, int width, int height);
 }

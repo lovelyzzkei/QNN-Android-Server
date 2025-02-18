@@ -10,6 +10,8 @@
 #include "IModel.hpp"
 #include "YoloModel.hpp"
 #include "DAv2Model.hpp"
+#include "ImageClassificationModel.hpp"
+#include "SuperResolutionModel.hpp"
 
 std::unique_ptr<IModel> createModel(TaskType task) {
     switch (task) {
@@ -17,8 +19,10 @@ std::unique_ptr<IModel> createModel(TaskType task) {
             return std::make_unique<YoloModel>();
         case TaskType::DEPTH_ESTIMATION:
             return std::make_unique<DAv2Model>();
+        case TaskType::IMAGE_CLASSIFICATION:
+            return std::make_unique<ImageClassificationModel>();
         case TaskType::SUPER_RESOLUTION:
-            // return std::make_unique<SuperResModel>();
+             return std::make_unique<SuperResolutionModel>();
         default:
             return nullptr;
     }

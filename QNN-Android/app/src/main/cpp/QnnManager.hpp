@@ -66,7 +66,7 @@ private:
     int frameIdx = 0;
 
     int offset = 0;
-    int vtcmSizeInMB = 2;   // Default
+    int vtcmSizeInMB = 8;   // Default
     double avgInferenceTime = 0.0f;
 
 };

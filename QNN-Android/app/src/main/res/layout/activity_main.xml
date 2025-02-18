@@ -94,148 +94,152 @@
                             android:textSize="16sp" />
                     </LinearLayout>
 
-
-                    <LinearLayout
+                    <ScrollView
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:gravity="center_horizontal"
-                        android:padding="10dp">
-
-                        <!-- Centered Title -->
-                        <TextView
-                            android:id="@+id/demo_title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Object Detection"
-                            android:textSize="20sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/primaryTextColor"/>
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="15dp"
-                            android:text="Real‑time object detection optimized for mobile and edge."
-                            android:textSize="15sp"
-                            android:textColor="@color/primaryTextColor"/>
-
-
-
-                        <!-- Section for Spinner Labels and Spinners -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="15dp"
-                            android:text="Model Configuration"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/primaryTextColor" />
-
-                        <!-- Model Name Row -->
+                        android:fillViewport="true">
                         <LinearLayout
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:layout_marginTop="8dp"
-                            android:gravity="center_vertical">
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center_horizontal"
+                            android:padding="10dp">
+
+                            <!-- Centered Title -->
+                            <TextView
+                                android:id="@+id/demo_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Object Detection"
+                                android:textSize="20sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/primaryTextColor"/>
 
                             <TextView
-                                android:layout_width="0dp"
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="0.4"
-                                android:text="Model:"
-                                android:textSize="16sp"
-                                android:textColor="@color/primaryTextColor"
-                                android:textStyle="bold"
-                                android:layout_marginEnd="16dp" />
+                                android:layout_marginTop="15dp"
+                                android:text="Real‑time object detection optimized for mobile and edge."
+                                android:textSize="15sp"
+                                android:textColor="@color/primaryTextColor"/>
 
-                            <Spinner
-                                android:id="@+id/spinner_model"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1" />
-                        </LinearLayout>
 
-                        <!-- Framework Row -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:layout_marginTop="8dp"
-                            android:gravity="center_vertical">
 
+                            <!-- Section for Spinner Labels and Spinners -->
                             <TextView
-                                android:layout_width="0dp"
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="0.4"
-                                android:text="Framework:"
-                                android:textSize="16sp"
-                                android:textColor="@color/primaryTextColor"
+                                android:layout_marginTop="15dp"
+                                android:text="Model Configuration"
+                                android:textSize="18sp"
                                 android:textStyle="bold"
-                                android:layout_marginEnd="16dp" />
+                                android:textColor="@color/primaryTextColor" />
 
-                            <Spinner
-                                android:id="@+id/spinner_framework"
-                                android:layout_width="0dp"
+                            <!-- Model Name Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_weight="1" />
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.4"
+                                    android:text="Model:"
+                                    android:textSize="16sp"
+                                    android:textColor="@color/primaryTextColor"
+                                    android:textStyle="bold"
+                                    android:layout_marginEnd="16dp" />
+
+                                <Spinner
+                                    android:id="@+id/spinner_model"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1" />
+                            </LinearLayout>
+
+                            <!-- Framework Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.4"
+                                    android:text="Framework:"
+                                    android:textSize="16sp"
+                                    android:textColor="@color/primaryTextColor"
+                                    android:textStyle="bold"
+                                    android:layout_marginEnd="16dp" />
+
+                                <Spinner
+                                    android:id="@+id/spinner_framework"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1" />
+                            </LinearLayout>
+
+
+                            <!-- Backend Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.4"
+                                    android:text="Backend:"
+                                    android:textSize="16sp"
+                                    android:textColor="@color/primaryTextColor"
+                                    android:textStyle="bold"
+                                    android:layout_marginEnd="16dp" />
+
+                                <Spinner
+                                    android:id="@+id/spinner_backend"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1" />
+                            </LinearLayout>
+
+                            <!-- Precision Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.4"
+                                    android:text="Precision:"
+                                    android:textSize="16sp"
+                                    android:textColor="@color/primaryTextColor"
+                                    android:textStyle="bold"
+                                    android:layout_marginEnd="16dp" />
+
+                                <Spinner
+                                    android:id="@+id/spinner_precision"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1" />
+                            </LinearLayout>
                         </LinearLayout>
+                    </ScrollView>
 
-
-                        <!-- Backend Row -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:layout_marginTop="8dp"
-                            android:gravity="center_vertical">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="0.4"
-                                android:text="Backend:"
-                                android:textSize="16sp"
-                                android:textColor="@color/primaryTextColor"
-                                android:textStyle="bold"
-                                android:layout_marginEnd="16dp" />
-
-                            <Spinner
-                                android:id="@+id/spinner_backend"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1" />
-                        </LinearLayout>
-
-                        <!-- Precision Row -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:layout_marginTop="8dp"
-                            android:gravity="center_vertical">
-
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="0.4"
-                                android:text="Precision:"
-                                android:textSize="16sp"
-                                android:textColor="@color/primaryTextColor"
-                                android:textStyle="bold"
-                                android:layout_marginEnd="16dp" />
-
-                            <Spinner
-                                android:id="@+id/spinner_precision"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1" />
-                        </LinearLayout>
-                    </LinearLayout>
 
                 </LinearLayout>
-
 
             </androidx.cardview.widget.CardView>
 
@@ -456,148 +460,154 @@
                             android:textSize="16sp" />
                     </LinearLayout>
 
-                    <LinearLayout
+                    <ScrollView
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
-                        android:orientation="vertical"
-                        android:gravity="center_horizontal"
-                        android:padding="10dp">
+                        android:fillViewport="true">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:orientation="vertical"
+                            android:gravity="center_horizontal"
+                            android:padding="10dp"
+                            android:overScrollMode="ifContentScrolls">
 
-                        <!-- Centered Title -->
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Image classification"
-                            android:textSize="20sp"
-                            android:textStyle="bold"
-                            android:textColor="@color/primaryTextColor"/>
+                            <!-- Centered Title -->
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Image classification"
+                                android:textSize="20sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/primaryTextColor"/>
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="15dp"
-                            android:text="Image Classification is a fundamental task in vision recognition that aims to understand and categorize an image as a whole under a specific label."
-                            android:textSize="15sp"
-                            android:textColor="@color/primaryTextColor"/>
-
-
-                        <!-- Section for Spinner Labels and Spinners -->
-<!--                        <TextView-->
-<!--                            android:layout_width="wrap_content"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:layout_marginTop="15dp"-->
-<!--                            android:text="Model Configuration"-->
-<!--                            android:textSize="18sp"-->
-<!--                            android:textStyle="bold"-->
-<!--                            android:textColor="@color/primaryTextColor" />-->
-
-<!--                        &lt;!&ndash; Model Name Row &ndash;&gt;-->
-<!--                        <LinearLayout-->
-<!--                            android:layout_width="match_parent"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:orientation="horizontal"-->
-<!--                            android:layout_marginTop="8dp"-->
-<!--                            android:gravity="center_vertical">-->
-
-<!--                            <TextView-->
-<!--                                android:layout_width="0dp"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_weight="0.4"-->
-<!--                                android:text="Model:"-->
-<!--                                android:textSize="16sp"-->
-<!--                                android:textColor="@color/primaryTextColor"-->
-<!--                                android:textStyle="bold"-->
-<!--                                android:layout_marginEnd="16dp" />-->
-
-<!--                            <Spinner-->
-<!--                                android:id="@+id/spinner_de_model"-->
-<!--                                android:layout_width="0dp"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_weight="1" />-->
-<!--                        </LinearLayout>-->
-
-<!--                        &lt;!&ndash; Framework Row &ndash;&gt;-->
-<!--                        <LinearLayout-->
-<!--                            android:layout_width="match_parent"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:orientation="horizontal"-->
-<!--                            android:layout_marginTop="8dp"-->
-<!--                            android:gravity="center_vertical">-->
-
-<!--                            <TextView-->
-<!--                                android:layout_width="0dp"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_weight="0.4"-->
-<!--                                android:text="Framework:"-->
-<!--                                android:textSize="16sp"-->
-<!--                                android:textColor="@color/primaryTextColor"-->
-<!--                                android:textStyle="bold"-->
-<!--                                android:layout_marginEnd="16dp" />-->
-
-<!--                            <Spinner-->
-<!--                                android:id="@+id/spinner_de_framework"-->
-<!--                                android:layout_width="0dp"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_weight="1" />-->
-<!--                        </LinearLayout>-->
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="15dp"
+                                android:text="Image Classification is a fundamental task in vision recognition that aims to understand and categorize an image as a whole under a specific label."
+                                android:textSize="15sp"
+                                android:textColor="@color/primaryTextColor"/>
 
 
-<!--                        &lt;!&ndash; Backend Row &ndash;&gt;-->
-<!--                        <LinearLayout-->
-<!--                            android:layout_width="match_parent"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:orientation="horizontal"-->
-<!--                            android:layout_marginTop="8dp"-->
-<!--                            android:gravity="center_vertical">-->
+                            <!-- Section for Spinner Labels and Spinners -->
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="15dp"
+                                android:text="Model Configuration"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/primaryTextColor" />
 
-<!--                            <TextView-->
-<!--                                android:layout_width="0dp"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_weight="0.4"-->
-<!--                                android:text="Backend:"-->
-<!--                                android:textSize="16sp"-->
-<!--                                android:textColor="@color/primaryTextColor"-->
-<!--                                android:textStyle="bold"-->
-<!--                                android:layout_marginEnd="16dp" />-->
+                            <!-- Model Name Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
 
-<!--                            <Spinner-->
-<!--                                android:id="@+id/spinner_de_backend"-->
-<!--                                android:layout_width="0dp"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_weight="1" />-->
-<!--                        </LinearLayout>-->
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.4"
+                                    android:text="Model:"
+                                    android:textSize="16sp"
+                                    android:textColor="@color/primaryTextColor"
+                                    android:textStyle="bold"
+                                    android:layout_marginEnd="16dp" />
 
-<!--                        &lt;!&ndash; Precision Row &ndash;&gt;-->
-<!--                        <LinearLayout-->
-<!--                            android:layout_width="match_parent"-->
-<!--                            android:layout_height="wrap_content"-->
-<!--                            android:orientation="horizontal"-->
-<!--                            android:layout_marginTop="8dp"-->
-<!--                            android:gravity="center_vertical">-->
+                                <Spinner
+                                    android:id="@+id/spinner_ic_model"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1" />
+                            </LinearLayout>
 
-<!--                            <TextView-->
-<!--                                android:layout_width="0dp"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_weight="0.4"-->
-<!--                                android:text="Precision:"-->
-<!--                                android:textSize="16sp"-->
-<!--                                android:textColor="@color/primaryTextColor"-->
-<!--                                android:textStyle="bold"-->
-<!--                                android:layout_marginEnd="16dp" />-->
+                            <!-- Framework Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
 
-<!--                            <Spinner-->
-<!--                                android:id="@+id/spinner_de_precision"-->
-<!--                                android:layout_width="0dp"-->
-<!--                                android:layout_height="wrap_content"-->
-<!--                                android:layout_weight="1" />-->
-<!--                        </LinearLayout>-->
-                    </LinearLayout>
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.4"
+                                    android:text="Framework:"
+                                    android:textSize="16sp"
+                                    android:textColor="@color/primaryTextColor"
+                                    android:textStyle="bold"
+                                    android:layout_marginEnd="16dp" />
+
+                                <Spinner
+                                    android:id="@+id/spinner_ic_framework"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1" />
+                            </LinearLayout>
+
+
+                            <!-- Backend Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.4"
+                                    android:text="Backend:"
+                                    android:textSize="16sp"
+                                    android:textColor="@color/primaryTextColor"
+                                    android:textStyle="bold"
+                                    android:layout_marginEnd="16dp" />
+
+                                <Spinner
+                                    android:id="@+id/spinner_ic_backend"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1" />
+                            </LinearLayout>
+
+                            <!-- Precision Row -->
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center_vertical">
+
+                                <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="0.4"
+                                    android:text="Precision:"
+                                    android:textSize="16sp"
+                                    android:textColor="@color/primaryTextColor"
+                                    android:textStyle="bold"
+                                    android:layout_marginEnd="16dp" />
+
+                                <Spinner
+                                    android:id="@+id/spinner_ic_precision"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </ScrollView>
                 </LinearLayout>
 
 
             </androidx.cardview.widget.CardView>
 
-            <!-- Second Card -->
+            <!-- Super resolution-->
             <androidx.cardview.widget.CardView
                 android:id="@+id/sr_card"
                 android:layout_width="600dp"
@@ -630,7 +640,7 @@
                             android:layout_height="wrap_content"
                             android:background="?attr/selectableItemBackgroundBorderless"
                             android:padding="16dp"
-                            android:text="Coming Soon..."
+                            android:text="Start!"
                             android:textAllCaps="false"
                             android:textColor="@color/primaryTextColor"
                             android:textSize="16sp" />
@@ -715,6 +725,7 @@
                                 android:layout_marginEnd="16dp" />
 
                             <Spinner
+                                android:id="@+id/spinner_sr_framework"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1" />
